@@ -1,0 +1,10 @@
+# Model-neutral denoising base.
+#
+# Used directly by the unified stages runner (tmgg-experiment).
+# Per-family denoising configs inherit from this and add a model config group.
+# Generative experiments inherit _base_infra directly, skipping this file.
+
+defaults:
+  - _base_infra
+  - task: denoising
+  - _self_

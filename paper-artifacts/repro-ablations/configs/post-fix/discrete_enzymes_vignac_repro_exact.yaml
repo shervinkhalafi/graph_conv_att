@@ -1,0 +1,49 @@
+# @package _global_
+# Vignac-recipe ENZYMES reproduction — post-fix exact variant
+# ===========================================================
+#
+# ENZYMES counterpart to ``discrete_sbm_vignac_repro_exact``. There is
+# no upstream Vignac ENZYMES experiment to anchor against, so "exact"
+# here means the same model-side parity choices that
+# ``discrete_sbm_vignac_repro_exact`` makes against live upstream
+# DiGress, applied to the existing ENZYMES data + cadence pipeline.
+#
+# Differs from ``discrete_enzymes_vignac_repro`` (the GDPO-aligned
+# panel variant) on:
+# * ``hidden_dims.dim_ffy``: 2048 (matches Vignac's live
+#   ``XEyTransformerLayer`` default; see commit f4f9665a's note that
+#   upstream ``GraphTransformer.__init__`` does not pass
+#   ``hidden_dims.dim_ffy`` into the layer).
+# * ``amsgrad``: false (PyTorch default; matches upstream
+#   ``train_default.yaml`` which does not set ``amsgrad``).
+# * ``use_upstream_hidden_edge_diagonal``: true (preserves the hidden
+#   edge diagonal after ``mlp_in_E`` until the final output mask, as
+#   live upstream does — see ``transformer_model.py:268`` upstream vs
+#   the legacy ``mask_zero_diag`` path).
+# * ``seed``: 0 (Vignac ``train_default.yaml`` default; the panel
+#   variant uses 666 to align with the ``gdpo_sbm.ckpt`` seed).
+#
+# Cadence inherits from ``discrete_enzymes_vignac_repro`` (val every
+# 5000 steps, sample every 75000) — there is no upstream ENZYMES
+# cadence to match exactly, and the panel cadence is the calibrated
+# operating point.
+#
+# Invocation:
+#
+#   tmgg-discrete-gen +experiment=discrete_enzymes_vignac_repro_exact
+
+defaults:
+  - discrete_enzymes_vignac_repro
+  - _self_
+
+experiment_name: discrete_enzymes_vignac_repro_exact
+wandb_project: discrete-enzymes-vignac-repro-exact
+
+seed: 0
+
+model:
+  amsgrad: false
+  model:
+    hidden_dims:
+      dim_ffy: 2048
+    use_upstream_hidden_edge_diagonal: true

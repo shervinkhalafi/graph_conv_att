@@ -1,0 +1,20 @@
+# @package _global_
+# Stage 4: Real-World Benchmarks
+#
+# Budget: 300 GPU-hours (future work)
+# Goal: Validate on practical benchmark datasets from PyTorch Geometric
+#
+# Uses same optimizer settings as stage1_poc for fair comparison
+
+defaults:
+  - _shared_runtime
+  - override /data: sbm_single_graph
+  - _self_
+
+# Stage identifier
+stage: stage4_benchmarks
+
+# Model settings
+model:
+  model:
+    k: 32

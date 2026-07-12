@@ -1,0 +1,13 @@
+# T6: Embedding Dimension Analysis Report
+# Studies minimum embedding dimensions across methods and datasets.
+defaults:
+  - /paths: default
+
+report:
+  type: embedding_dimensions
+  data:
+    results_dir: ${paths.embedding_results}
+    datasets: [sbm, er, tree, regular, enzymes]
+  embedding_types: [lpca, dot_product, distance_threshold, orthogonal]
+  output:
+    dir: ${paths.reports}/t6_embedding_dimensions

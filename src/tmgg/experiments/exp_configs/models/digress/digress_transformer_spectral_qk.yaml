@@ -1,0 +1,24 @@
+# DiGress GraphTransformer with spectral projections for Q and K only
+
+defaults:
+  - digress_base
+  - _self_
+
+model:
+  n_layers: 4
+  hidden_dims:
+    dx: 128
+    de: 32
+    dy: 128
+    n_head: 4
+  projection_config:
+    use_spectral_q: true
+    use_spectral_k: true
+    use_spectral_v: false
+    spectral_k: 16
+    spectral_num_terms: 3
+    # spectral_normalize_eigenvalues: true   # default; set false to skip the λ/max|λ| rescale
+  hidden_mlp_dims:
+    X: 256
+    E: 64
+    y: 256

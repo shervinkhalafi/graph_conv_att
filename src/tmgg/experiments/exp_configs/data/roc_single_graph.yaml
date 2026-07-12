@@ -1,0 +1,12 @@
+# @package data
+# Single-graph protocol for ring of cliques graphs
+
+defaults:
+  - single_graph_base
+
+graph_type: ring_of_cliques
+num_nodes: 20  # Ignored (determined by num_cliques * clique_size)
+
+graph_config:
+  num_cliques: 4
+  clique_size: 5  # Total nodes = 4 * 5 = 20

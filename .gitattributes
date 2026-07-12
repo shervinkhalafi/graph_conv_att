@@ -1,0 +1,6 @@
+eigenstructure_results/**/*.json filter=lfs diff=lfs merge=lfs -text
+eigenstructure_results/**/*.safetensors filter=lfs diff=lfs merge=lfs -text
+eigenstructure_results_full/*.json filter=lfs diff=lfs merge=lfs -text
+eigenstructure_results_full/*.parquet filter=lfs diff=lfs merge=lfs -text
+paper-artifacts/pearl-perf/data/*.parquet filter=lfs diff=lfs merge=lfs -text
+data-bundle/*.tar.zst filter=lfs diff=lfs merge=lfs -text

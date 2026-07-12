@@ -1,0 +1,8 @@
+# @package data
+# Single-graph protocol for random tree graphs
+
+defaults:
+  - single_graph_base
+
+graph_type: tree
+num_nodes: 50

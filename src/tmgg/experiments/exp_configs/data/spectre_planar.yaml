@@ -1,0 +1,11 @@
+# @package data
+_target_: tmgg.data.data_modules.spectre_planar.SpectrePlanarDataModule
+batch_size: 12
+num_workers: 0
+pin_memory: true
+prefetch_factor: 4
+seed: 42
+cache_dir: null
+fixture_path: null
+num_nodes_max_static: 64  # SPECTRE planar fixture (Martinkus et al. 2022)
+pad_to_static_n_max: true  # static-shape batches → torch.compile-friendly

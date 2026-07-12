@@ -1,0 +1,27 @@
+# @package data
+# Stochastic Block Model data configuration (n=200)
+#
+# Paper synthetic-SBM preset (Appendix B.2.3): n=200, block count K sampled
+# uniformly from {2,3,4} (min_blocks/max_blocks inherited from sbm_default),
+# maximum block size 60, p_intra=1.0 / p_inter=0.0 (disjoint cliques).
+#
+# Reproduce the block-size-heterogeneity sweep (paper α, Eq. 28) by adding the
+# Dirichlet concentration ``block_size_alpha``; it routes generation onto the
+# per-graph Dirichlet batch path (overriding enumerated partitioning) and sizes
+# the dataset from ``graph_config.num_graphs`` (default 1000):
+#
+#   ... data=sbm_n200 +data.graph_config.block_size_alpha=0.1,1.0,10.0 --multirun
+#
+# (sbm_n100 is the n=100 counterpart, max block size 50.) Larger α → more
+# homogeneous blocks → less diversity across graphs.
+
+defaults:
+  - sbm_default
+  - _self_
+
+graph_config:
+  num_nodes: 200
+  max_block_size: 60
+
+# Override the inherited safe upper bound to track ``num_nodes`` here.
+num_nodes_max_static: 200

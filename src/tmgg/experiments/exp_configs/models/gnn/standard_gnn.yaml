@@ -1,0 +1,33 @@
+# Standard GNN model configuration
+
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: "gnn"
+
+model:
+  _target_: tmgg.models.gnn.GNN
+  num_layers: 1
+  num_terms: 4
+  feature_dim_in: 20
+  feature_dim_out: 20
+  # Wave 7/8 architecture contract: split-field output dims and edge_source selector.
+  # Denoising default: read E_feat, write E_feat with a single scalar channel.
+  edge_source: feat
+  output_dims_x_class: null
+  output_dims_x_feat: null
+  output_dims_e_class: null
+  output_dims_e_feat: 1
+
+# Training parameters (inherit from task/denoising.yaml via base_config_denoising)
+learning_rate: ${learning_rate}
+loss_type: ${loss_type}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+scheduler_config: ${scheduler_config}
+rotation_k: 20
+
+# Noise settings
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+seed: ${seed}

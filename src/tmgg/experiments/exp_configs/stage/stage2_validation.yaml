@@ -1,0 +1,43 @@
+# @package _global_
+# Stage 2: Cross-Dataset Validation (unified single-graph and cross-graph protocols)
+#
+# Budget: ~19 GPU-hours (5 architectures x 9 datasets x 3 noise levels x 3 seeds)
+# Goal: Validate denoising across diverse graph families
+#
+# Two protocols controlled by cross_graph parameter:
+# - cross_graph=false (default): Train/val/test use SAME graph (single-graph protocol)
+# - cross_graph=true: Train/val/test use DIFFERENT graphs (generalization test)
+#
+# Spectral models: high LR (1e-2) + amsgrad + tiny weight decay
+# DiGress: official settings (LR=0.0002, amsgrad, weight_decay=1e-12)
+
+defaults:
+  - override /data: er_single_graph
+
+# Stage identifier
+stage: stage2_validation
+
+# Protocol toggle: set cross_graph=true via CLI for cross-graph validation
+cross_graph: false
+
+# Data protocol settings (computed from cross_graph)
+data:
+  same_graph_all_splits: ${not_:${cross_graph}}
+  val_test_seed: ${if_:${cross_graph},100,123}
+
+# Optimizer settings (harmonized across all stages)
+learning_rate: 1e-2
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+scheduler_config:
+  type: none
+
+# Model settings
+model:
+  model:
+    k: 50
+
+# Default noise levels (overridden in sweep)
+noise_levels: [0.1]
+eval_noise_levels: [0.1]

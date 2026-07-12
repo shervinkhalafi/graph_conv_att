@@ -1,0 +1,8 @@
+# @package _global_
+
+logger:
+  - csv:
+      save_dir: ${paths.output_dir}/csv
+      name: ${experiment_name}
+      version: null
+      flush_logs_every_n_steps: 100  # Flush logs to disk every N steps

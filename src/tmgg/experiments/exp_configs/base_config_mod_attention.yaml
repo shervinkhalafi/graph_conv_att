@@ -1,0 +1,16 @@
+defaults:
+  - base_config_denoising
+  - models/modified_attention/mod_attention@model
+  - _self_
+
+experiment_name: "mod_attention_denoising"
+wandb_project: architecture-study
+_cli_cmd: tmgg-mod-attention
+
+# Preserve prior cosine-warmup behaviour after _base_infra default flipped
+# to ``type: none`` (parity #38 / D-9). Denoising experiments use warmup
+# unless explicitly disabled per-run.
+scheduler_config:
+  type: cosine_warmup
+  warmup_fraction: 0.02
+  decay_fraction: 0.8

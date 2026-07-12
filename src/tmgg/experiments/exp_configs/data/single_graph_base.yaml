@@ -1,0 +1,27 @@
+# @package data
+# Base configuration for single-graph protocol experiments.
+# Individual graph type configs inherit from this and override graph-specific params.
+#
+# Protocol: Train, val, and test all use the SAME graph with varying noise only.
+# This tests whether models can denoise a fixed graph structure.
+
+_target_: tmgg.data.SingleGraphDataModule
+
+# Single-graph protocol: same graph for all splits
+same_graph_all_splits: true
+
+# Random seeds for graph generation
+train_seed: 42
+val_test_seed: 123  # Used when same_graph_all_splits=false
+
+# Number of samples per split (noise realizations)
+num_train_samples: 1000
+num_val_samples: 100
+num_test_samples: 100
+
+# Dataloader parameters
+batch_size: 16
+num_workers: 4
+
+# Noise is configured at top level by task/denoising.yaml.
+# Do not add noise kwargs to the datamodule config.

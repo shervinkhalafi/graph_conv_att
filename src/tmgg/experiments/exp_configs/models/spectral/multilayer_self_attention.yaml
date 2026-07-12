@@ -1,0 +1,43 @@
+# Multilayer Self-Attention denoiser with transformer blocks
+# V → project → L×(attention + residual + [MLP + residual]) → Q,K → Â
+
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: multilayer_bilinear
+
+model:
+  _target_: tmgg.models.spectral_denoisers.bilinear.MultiLayerBilinearDenoiser
+  # Number of eigenvectors (input dimension)
+  k: 8
+  # Transformer architecture
+  d_model: 64
+  num_heads: 4
+  num_layers: 2
+  # MLP in transformer blocks
+  use_mlp: true
+  mlp_hidden_dim: null  # defaults to 4 * d_model
+  # Regularization
+  dropout: 0.0
+  # Wave 7/8 architecture contract: split-field output dims and edge_source selector.
+  # Denoising default: read E_feat, write E_feat with a single scalar channel.
+  edge_source: feat
+  output_dims_x_class: null
+  output_dims_x_feat: null
+  output_dims_e_class: null
+  output_dims_e_feat: 1
+
+# Optimizer settings
+learning_rate: ${learning_rate}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+
+# Scheduler
+scheduler_config: ${scheduler_config}
+
+# Noise settings
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+
+# Loss
+loss_type: ${loss_type}

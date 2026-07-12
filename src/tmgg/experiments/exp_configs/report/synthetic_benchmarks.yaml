@@ -1,0 +1,20 @@
+# T8: Synthetic Benchmarks Report
+# Evaluates generative quality on synthetic graph families.
+defaults:
+  - /paths: default
+
+report:
+  type: synthetic_benchmarks
+  data:
+    checkpoints: []  # Must be overridden at invocation
+    datasets: [sbm, erdos_renyi, watts_strogatz, regular, tree]
+  evaluation:
+    num_samples: 500
+    num_nodes: 20
+    num_steps: 100
+    mmd_kernel: gaussian_tv
+    mmd_sigma: 1.0
+    device: cuda
+    seed: 42
+  output:
+    dir: ${paths.reports}/t8_synthetic

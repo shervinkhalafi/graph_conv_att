@@ -1,0 +1,22 @@
+# Default model config for {{ cookiecutter.experiment_name }}.
+# Override architecture params here; training params interpolate from base config.
+
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: {{ cookiecutter.experiment_slug }}
+model:
+  _target_: tmgg.models.REPLACE_WITH_YOUR_MODEL_CLASS
+  hidden_dim: 64
+  num_layers: 4
+
+learning_rate: ${learning_rate}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+amsgrad: ${amsgrad}
+scheduler_config: ${scheduler_config}
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+loss_type: ${loss_type}
+seed: ${seed}
+spectral_k: ${spectral_k}

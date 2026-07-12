@@ -1,0 +1,37 @@
+# Graph Filter Bank denoiser with spectral polynomial
+# W = Σ Λ^ℓ H^{(ℓ)}, Â = V W V^T
+
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: filter_bank
+
+model:
+  _target_: tmgg.models.spectral_denoisers.GraphFilterBank
+  # Number of eigenvectors
+  k: 8
+  # Polynomial degree K
+  # Sweep: {3, 5, 8}
+  polynomial_degree: 5
+  # Wave 7/8 architecture contract: split-field output dims and edge_source selector.
+  # Denoising default: read E_feat, write E_feat with a single scalar channel.
+  edge_source: feat
+  output_dims_x_class: null
+  output_dims_x_feat: null
+  output_dims_e_class: null
+  output_dims_e_feat: 1
+
+# Optimizer settings
+learning_rate: ${learning_rate}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+
+# Scheduler
+scheduler_config: ${scheduler_config}
+
+# Noise settings
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+
+# Loss
+loss_type: ${loss_type}

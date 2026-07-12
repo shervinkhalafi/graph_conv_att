@@ -1,0 +1,46 @@
+# @package _global_
+# Async-eval spawn callback configuration.
+#
+# Step 4 of the async-eval plan
+# (`internal async-eval design notes`).
+# This config plugs into ``callbacks.async_eval_spawn`` and is consumed
+# by ``hydra.utils.instantiate(cfg.callbacks.async_eval_spawn)`` in the
+# trainer-side callback factory (Step 5+).
+#
+# Defaults match ``AsyncEvalSpawnCallback.__init__`` so a launcher only
+# needs to set ``enabled=true`` plus the schedule and per-run identifiers.
+# The schedule list is left empty by default; sweep launchers pass it in
+# via ``callbacks.async_eval_spawn.schedule=[...]`` (or a schedule file).
+
+callbacks:
+  async_eval_spawn:
+    _target_: tmgg.training.callbacks.async_eval_spawn.AsyncEvalSpawnCallback
+    # Gate: when false, the callback factory skips instantiation entirely.
+    # The factory in ``training/orchestration/run_experiment.py`` reads
+    # this flag before calling ``hydra.utils.instantiate``.
+    enabled: false
+    # Eval schedule (training-step list). Empty by default; sweep launchers
+    # pass a cosine-bowl schedule via override.
+    schedule: []
+    # Per-run audit identifier; set by the launcher to the smallest-cfg
+    # tuple, e.g. ``smallest-cfg/spectre_sbm/r1/anchor/aabbccdd``.
+    run_uid: ${run_id}
+    # W&B addressing for the spawned worker's ``init(resume="must")``.
+    wandb_project: ${wandb_project}
+    wandb_entity: ${wandb_entity}
+    # Manifest lives next to the run's outputs on the persistent volume.
+    manifest_path: ${paths.output_dir}/eval_manifest.jsonl
+    # Modal app + GPU tier for the spawned worker.
+    modal_app_name: graph-denoising
+    gpu_tier: standard
+    # Eval-side knobs forwarded to the spawned worker.
+    num_samples: 40
+    num_steps: 1000
+    # Keep step-stamped checkpoints on the volume after spawn (useful for
+    # post-hoc reconciliation; set false to delete after spawn).
+    keep_step_checkpoints: true
+    # Drain budget: 15-min progress-reset idle timeout. Each newly-observed
+    # ``completed`` or ``failed`` row resets the timer.
+    eval_drain_idle_timeout_s: 900
+    # Drain poll cadence: how often to re-read the manifest.
+    eval_drain_poll_s: 30

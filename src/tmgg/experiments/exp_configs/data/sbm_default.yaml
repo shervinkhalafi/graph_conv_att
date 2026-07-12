@@ -1,0 +1,43 @@
+# @package data
+# Stochastic Block Model data configuration
+
+defaults:
+  - base_dataloader
+  - _self_
+
+graph_type: sbm
+graph_config:
+  # Graph parameters
+  num_nodes: 20
+  p_intra: 1.0  # Probability of intra-block edges
+  p_inter: 0.0  # Probability of inter-block edges
+
+  # Block size generation
+  min_blocks: 2
+  max_blocks: 4
+  min_block_size: 2
+  max_block_size: 15
+
+  # Dataset splits — auto-detected as enumerated mode when
+  # num_train_partitions is present (each partition → one graph).
+  num_train_partitions: 10
+  num_test_partitions: 10
+
+samples_per_graph: 1000
+
+# Safe upper bound on node count across the dataset, exposed for Hydra
+# interpolation so model configs (e.g. ``model.extra_features.max_n_nodes``)
+# can pull a single source of truth instead of hardcoding a number that
+# silently drifts when the data preset changes. Synthetic SBM here is
+# fixed at ``graph_config.num_nodes = 20``; downstream presets that
+# raise ``num_nodes`` (sbm_n100, sbm_n200) MUST override this field
+# accordingly. See parity audit D-11 / #42 for the design decision.
+num_nodes_max_static: 20
+
+# SBM parameters re-exported for the evaluator via Hydra interpolation.
+# The model config pulls ``p_intra`` / ``p_inter`` from this block, so
+# overriding ``graph_config.p_intra`` keeps the evaluator in sync
+# automatically.
+eval_meta:
+  p_intra: ${data.graph_config.p_intra}
+  p_inter: ${data.graph_config.p_inter}

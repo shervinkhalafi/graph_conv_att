@@ -1,0 +1,51 @@
+# @package _global_
+# DiGress SBM repro variant — PEARL positional encoding instead of
+# eigendecomposition.
+#
+# Replaces the spectral path of ``ExtraFeatures`` (which calls
+# ``torch.linalg.eigh`` per diffusion step at the cost of ~57 % of eval
+# CUDA on the round-5 Greedy profile) with R-PEARL (Hejin et al.,
+# ICLR 2025; ``ehejin/Pearl-PE``) via :class:`PEARLExtraFeatures`. The
+# rest of the experiment (data, optimizer, schedule, evaluator,
+# checkpoint cadence) inherits verbatim from
+# ``discrete_sbm_vignac_repro``.
+#
+# Why R-PEARL: it produces a per-node positional encoding via GNN
+# message passing in O(n) per layer (vs O(n^3) for eigh), handles
+# variable graph sizes naturally (no max-n_nodes assumption), and the
+# original paper shows competitive or better quality vs LapPE on the
+# SPECTRE / GraphGym benchmarks. Eigh-side cost on eval drops to zero;
+# a tiny fixed cost from the small PEARL GNN (3 layers, 64-dim hidden)
+# replaces it.
+#
+# Quality vs upstream is an open question for *this* dataset/model
+# combination — paper benchmarks don't include diffusion-graph-gen.
+# Treat as a perf-vs-quality experiment, not a parity claim.
+
+defaults:
+  - discrete_sbm_vignac_repro
+  - _self_
+
+experiment_name: discrete_sbm_pearl_repro
+wandb_project: discrete-sbm-pearl-repro
+
+# Replace the ``ExtraFeatures(extra_features_type=all)`` block with the
+# PEARL-based equivalent. Output widths declared by
+# ``pearl_extra_features_dims(pearl_dim=16)``: extra_X = 3 + 16 = 19,
+# extra_y = 5. Compared to upstream "all" (extra_X = 6, extra_y = 11),
+# extra_X is 13 wider (PEARL channels) and extra_y is 6 narrower (no
+# spectral global features). The transformer's input projection sizes
+# itself off ``input_dims["X"]`` + extra widths via ``adjust_dims``,
+# so the model fits without further config changes. ``hidden_dims.dx``
+# stays at 256.
+model:
+  model:
+    extra_features:
+      _target_: tmgg.models.digress.pearl_extra_features.PEARLExtraFeatures
+      max_n_nodes: ${data.num_nodes_max_static}
+      pearl_output_dim: 16  # node embedding width
+      pearl_num_layers: 3   # PEARL paper default
+      pearl_mode: random    # R-PEARL (preferred over B-PEARL for SBM size variance)
+      pearl_hidden_dim: 64  # message-passing MLP width
+      pearl_input_samples: 32   # R-PEARL random feature count per node
+      pearl_max_nodes: ${data.num_nodes_max_static}  # used by B-PEARL only

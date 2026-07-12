@@ -1,0 +1,20 @@
+# @package _global_
+# Stage 5: Full Validation
+#
+# Budget: 1500 GPU-hours (future work, for publication)
+# Goal: Comprehensive ablations and robustness analysis
+#
+# Uses same optimizer settings as stage1_poc for fair comparison
+
+defaults:
+  - _shared_runtime
+  - override /data: sbm_single_graph
+  - _self_
+
+# Stage identifier
+stage: stage5_full
+
+# Model settings
+model:
+  model:
+    k: 50

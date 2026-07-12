@@ -1,0 +1,8 @@
+# @package _global_
+# DiGress noise — inherits shared grid config from grid_base
+
+defaults:
+  - grid_base
+  - _self_
+
+noise_type: "digress"

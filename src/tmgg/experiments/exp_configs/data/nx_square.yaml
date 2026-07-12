@@ -1,0 +1,15 @@
+# @package data
+_target_: tmgg.data.GraphDataModule
+graph_type: square_grid
+graph_config:
+  # Legacy "nx_square" preset, expressed through the current graph generator API.
+  num_nodes: 25  # Produces a 5x5 square grid.
+  num_graphs: 100
+
+# Data module settings
+samples_per_graph: 1000
+batch_size: 32
+num_workers: 4
+pin_memory: true
+train_ratio: 0.6
+val_ratio: 0.2

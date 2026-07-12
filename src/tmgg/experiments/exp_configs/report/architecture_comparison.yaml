@@ -1,0 +1,29 @@
+# T1: Architecture Comparison Report
+# Compares denoising architectures across all semantic groupings.
+defaults:
+  - /paths: default
+
+report:
+  type: architecture_comparison
+  data:
+    source: ${paths.unified_parquet}
+    state_filter: finished
+    protocol_filter: distribution
+  metrics:
+    primary: metric_test_mse
+    higher_is_better: false
+  grouping:
+    architectures:
+      - spectral_self_attention
+      - spectral_linear_pe
+      - spectral_filter_bank
+      - digress_default
+      - digress_transformer
+      - digress_gnn_all
+      - digress_gnn_qk
+      - digress_gnn_v
+    datasets: null  # null = auto-detect from data
+  output:
+    dir: ${paths.reports}/t1_architecture_comparison
+    figure_dpi: 300
+    figure_format: png

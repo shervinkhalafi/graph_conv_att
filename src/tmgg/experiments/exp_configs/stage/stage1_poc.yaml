@@ -1,0 +1,35 @@
+# @package _global_
+# Stage 1: Proof of Concept
+#
+# Budget: 4.4 GPU-hours
+# Goal: Validate that spectral PE architectures can denoise graphs
+#
+# Uses same optimizer settings as working sanity check:
+# - No weight decay (simpler optimization)
+# - No LR scheduling (constant LR)
+# - Adam optimizer (not AdamW)
+
+defaults:
+  - override /data: sbm_single_graph
+
+# Stage identifier
+stage: stage1_poc
+
+# Optimizer settings (harmonized across all stages)
+learning_rate: 1e-2
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+
+# Disable LR scheduling for simpler optimization
+scheduler_config:
+  type: none
+
+# Full spectrum for n=50 graph
+model:
+  model:
+    k: 50
+
+# Single noise level per experiment (swept via hyperparameters)
+noise_levels: [0.1]
+eval_noise_levels: [0.1]

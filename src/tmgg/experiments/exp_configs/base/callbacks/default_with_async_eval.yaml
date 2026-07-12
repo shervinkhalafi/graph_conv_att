@@ -1,0 +1,15 @@
+# @package _global_
+# Callback group that composes the existing default callbacks with the
+# async-eval spawn callback.
+#
+# Use via ``base/callbacks=default_with_async_eval`` (the override path
+# matches the defaults entry in ``_base_infra.yaml``: ``base/callbacks:
+# default``; a plain ``callbacks=...`` would not resolve to this nested
+# group). Combined with ``callbacks.async_eval_spawn.enabled=true`` and
+# a schedule override, this is the entry point for the sweep's
+# async-eval mode.
+
+defaults:
+  - default
+  - async_eval_spawn
+  - _self_

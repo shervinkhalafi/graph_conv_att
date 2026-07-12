@@ -1,0 +1,33 @@
+# @package _global_
+# DiGress SBM — Vignac extra features + spectral attention, post-fix exact.
+# ========================================================================
+#
+# Mirrors ``discrete_sbm_vignac_spectral_repro`` but inherits the four
+# upstream-parity deltas from ``discrete_sbm_vignac_repro_exact``:
+# ``dim_ffy=2048``, ``amsgrad=false``, ``seed=0``,
+# ``use_upstream_hidden_edge_diagonal=true``.
+#
+# Use this overlay to re-run the "vanilla DiGress + spectral attention"
+# arm of the panel after the hidden-edge-diagonal fix (commit f4f9665a).
+# The ``_repro`` panel run (``e5pd9drt``) carried the legacy
+# ``mask_zero_diag`` divergence and was killed; this is its post-fix
+# successor.
+
+defaults:
+  - discrete_sbm_vignac_repro_exact
+  - _self_
+
+experiment_name: discrete_sbm_vignac_spectral_repro_exact
+wandb_project: discrete-sbm-vignac-spectral-repro-exact
+
+model:
+  model:
+    # Switch attention Q/K/V from ``Linear`` to ``SpectralProjectionLayer``.
+    # Same parameters as ``discrete_sbm_vignac_spectral_repro``.
+    projection_config:
+      use_spectral_q: true
+      use_spectral_k: true
+      use_spectral_v: true
+      spectral_k: 16            # eigenpairs per projection
+      spectral_num_terms: 3     # polynomial expansion order
+      spectral_normalize_eigenvalues: true

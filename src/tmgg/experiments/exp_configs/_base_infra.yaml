@@ -1,0 +1,168 @@
+# Shared training infrastructure for all experiment types
+#
+# Contains settings that every experiment needs: optimizer, scheduler, seed,
+# paths, hydra output, visualization, and spectral logging.
+#
+# Denoising-specific settings (data config group, noise keys, loss_type) live
+# in task/denoising.yaml, composed via base_config_denoising.yaml.
+# Generative experiments inherit this file directly, skipping the denoising
+# task config entirely.
+
+defaults:
+  - base/trainer/default@trainer
+  - base/logger: wandb
+  - base/callbacks: default
+  - base/progress_bar: default
+  - _self_
+
+# Experiment identification (overridden by each experiment type)
+experiment_name: "tmgg_training"
+wandb_project: ???
+wandb_entity: your-wandb-entity
+# Set true to run pre-training sanity checks (noise, data, model, loss).
+# Usage: uv run tmgg-spectral-arch sanity_check=true trainer.max_steps=0
+sanity_check: false
+
+# Optimizer settings (per experimental design)
+learning_rate: 1e-3
+weight_decay: 1e-4
+optimizer_type: adamw
+amsgrad: false  # PyTorch default; SBM DiGress configs override to true
+
+# Learning rate scheduler.
+#
+# Default: ``type: none`` — flat LR, matches upstream DiGress, which uses
+# no scheduler (parity #38 / D-9). Experiments that want cosine warmup
+# opt in explicitly, e.g.:
+#
+#   scheduler_config:
+#     type: cosine_warmup
+#     warmup_fraction: 0.02   # 2% of training (~1-2 epochs typical)
+#     decay_fraction: 0.8     # LR reaches 0 at 80% of training
+#
+# The cosine_warmup form uses fractions of total training so it scales
+# automatically with batch_size and max_steps.
+scheduler_config:
+  type: none
+
+# Spectral delta logging (eigenstructure tracking during training)
+# Always logs eigengap delta, algebraic connectivity delta,
+# eigenvalue drift, and subspace distance for noisy→clean and denoised→clean.
+spectral_k: 4  # Number of top eigenvectors for subspace comparison
+
+# DataLoader worker processes (0 = main process only, 4 = good default for
+# both local and cloud; Modal containers can override higher via CLI)
+num_workers: 4
+
+# Per-worker prefetch buffer depth for DataLoader. PyTorch's default is 2;
+# raising to 4 hides ~370 ms/step worth of data-prep latency at the cost of
+# a few extra batches buffered in worker memory. Has no effect when
+# ``num_workers == 0``. See ``an internal validation harness (not included)``. Set to ``2`` to revert
+# to PyTorch default.
+prefetch_factor: 4
+
+# float32 matmul precision for Ampere+ Tensor Cores. ``"high"`` enables TF32
+# for ~2x speedup on residual fp32 matmuls (those not under bf16-mixed
+# autocast) with minimal accuracy loss. ``"highest"`` disables TF32 for
+# byte-exact fp32 reproducibility. ``"medium"`` is bfloat16-flavoured and
+# generally not what you want here. See internal notes (not included).
+matmul_precision: "high"
+
+# Debug mode for Modal-launched experiments.
+#
+# Off by default. When ``false`` (production), the Modal container launches
+# the training subprocess with ``PYTHONOPTIMIZE=1``, which strips ``assert``
+# statements and the contents of ``if __debug__:`` blocks at bytecode-compile
+# time. Stripping removes ~50 host-side ``bool(Tensor)`` syncs/step from the
+# hot path (defensive asserts in extras, mask-symmetry checks, masked-softmax
+# guards, etc.) that are otherwise CUDA-graph / ``torch.compile`` blockers.
+# See ``internal notes (not included)`` for the full
+# inventory.
+#
+# Set ``modal_debug=true`` (or ``MODAL_DEBUG=1`` in the wrapper env) to keep
+# asserts active when investigating numerical issues on Modal. Has no effect
+# on local runs — those follow the parent shell's ``PYTHONOPTIMIZE``.
+modal_debug: false
+
+# Random seed for reproducibility
+seed: 42
+
+# Training resumption. The resolved behavior depends on whether
+# ``run_id`` is auto-generated (anonymous) or set explicitly via a
+# Hydra override (``+run_id=<name>`` — the "named, resumable" path
+# used to handle Modal preemptions gracefully).
+#
+# Behavior matrix:
+#
+# | invocation                                  | suffix?     | resumed? | wandb resumed? |
+# |---------------------------------------------|-------------|----------|----------------|
+# | (default, no overrides)                     | YES `_fresh_<UTC>` | n/a    | n/a    |
+# | `+run_id=foo force_fresh=false`             | NO          | YES (1)  | YES (2)        |
+# | `+run_id=foo force_fresh=true`              | NO          | NO (3)   | NO (4)         |
+#
+# (1) If `<output_dir>/checkpoints/last.ckpt` exists.
+# (2) If `<output_dir>/wandb_run_id.txt` sidecar exists. Without the
+#     sidecar (e.g. first launch) a fresh W&B run is created and its
+#     id is persisted into the sidecar for the next launch.
+# (3) The destructive-wipe gate in ``run_experiment`` rmtree's the
+#     existing dir before mkdir, so no last.ckpt can survive.
+# (4) Same wipe also removes the sidecar, so a fresh W&B run is
+#     started with a fresh id.
+#
+# Default ``force_fresh: true`` retained from the round-1 contamination
+# incident (2026-04-30): when two runs computed the same deterministic
+# run_id, the async-eval worker's checkpoint-by-step lookup loaded a
+# leftover ckpt from the prior run and reported its metrics under the
+# new run's display name. The auto ``_fresh_<UTC>`` suffix on anonymous
+# runs guarantees a fresh dir per launch; the cost (no checkpoint resume
+# after a transient crash) is negligible next to silent contamination.
+#
+# For the named-resumable path used in Modal preempt-resume cycles:
+# pass ``+run_id=<name> force_fresh=false`` together. The sidecar +
+# Lightning resume path then makes "re-launch identical command after
+# preempt" land you back at the last checkpoint in the same W&B run.
+#
+# Lint warning for future editors of base configs: do NOT add a
+# ``run_id: null`` (or any default value) to base configs. The
+# explicit-vs-auto detection in ``run_experiment.py`` keys on
+# ``config.get("run_id") is None``; presetting any value would make
+# every launch look "explicit" and break the auto-suffix for anonymous
+# runs. The Hydra override ``+run_id=<name>`` syntax already requires
+# the leading ``+`` precisely because the key is absent by design.
+force_fresh: true
+
+# When true, training continues without W&B logging if WANDB_API_KEY
+# is unset. Set false (the default) to enforce W&B and crash without
+# the key — keeps every Modal run fully observable and surfaces secret
+# misconfiguration as a hard, unambiguous error rather than as a
+# downstream callback misconfiguration (the LearningRateMonitor crash
+# pattern that masked a missing-logger bug for an entire 2026-05-04
+# debugging session). Override to ``true`` only for genuinely
+# loggerless local runs (e.g. CI smoke tests).
+allow_no_wandb: false
+
+# Stage identifier for multi-stage experiments (stage1_poc, stage2_validation, etc.)
+# Set automatically by stage runners; null when running experiments directly
+stage: null
+
+# Evaluation settings shared by generative experiment paths.
+evaluation:
+  visualization:
+    enabled: true
+    num_samples: 8
+
+# Paths configuration
+# - Local execution: Hydra resolves ${hydra:runtime.output_dir} automatically
+# - Remote execution (Modal): config is serialized to YAML and the CLI runner
+#   resolves paths via Hydra inside the container
+paths:
+  output_dir: ${hydra:runtime.output_dir}
+  results_dir: ${paths.output_dir}/results
+
+# Hydra output directory (version-based for checkpoint resumption)
+hydra:
+  run:
+    dir: outputs/v${tmgg_version:}/${experiment_name}
+  sweep:
+    dir: outputs/sweeps/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}

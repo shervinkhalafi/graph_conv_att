@@ -1,0 +1,12 @@
+# @package data
+# Single-graph protocol for PROTEINS protein structure graphs
+
+defaults:
+  - single_graph_base
+
+graph_type: pyg_proteins
+num_nodes: 0  # Ignored for PyG datasets (determined by selected graph)
+
+graph_config:
+  graph_idx: 0  # Index of graph to use (0 = first graph in dataset)
+  root: ./data/pyg_proteins

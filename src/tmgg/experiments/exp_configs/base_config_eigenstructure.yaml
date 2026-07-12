@@ -1,0 +1,46 @@
+# Eigenstructure analysis study (no training — spectral analysis only).
+# Inherits: _base_structural_study (minimal: wandb_entity, seed, paths).
+# Run: uv run tmgg-eigenstructure-exp
+
+defaults:
+  - _base_structural_study
+  - _self_
+
+experiment_name: eigenstructure_study
+wandb_project: eigenstructure
+_cli_cmd: tmgg-eigenstructure
+
+phase: collect  # collect | analyze | noised | compare | covariance
+
+dataset:
+  name: sbm
+  config:
+    num_nodes: 50
+    p_intra: 0.8
+    p_inter: 0.1
+    num_partitions: 100
+
+batch_size: 64
+
+# Phase-specific settings (used by analyze/noised/compare)
+analysis:
+  subspace_k: 10
+  compute_covariance: true
+  matrix_type: adjacency
+
+noise:
+  type: gaussian
+  levels: [0.01, 0.05, 0.1, 0.2, 0.3]
+  rotation_k: null
+
+comparison:
+  subspace_k: 10
+  procrustes_k_values: [1, 2, 4, 8, 16]
+  compute_covariance_evolution: true
+
+paths:
+  output_dir: outputs/eigenstructure/${dataset.name}
+
+hydra:
+  run:
+    dir: outputs/eigenstructure/${dataset.name}/${now:%Y-%m-%d_%H-%M-%S}

@@ -1,0 +1,15 @@
+# @package data
+# Single-graph protocol for LFR benchmark graphs (planted community structure)
+
+defaults:
+  - single_graph_base
+
+graph_type: lfr
+num_nodes: 200  # LFR needs large n for community constraints
+
+graph_config:
+  tau1: 2.0       # Power law exponent for degree distribution
+  tau2: 1.1       # Power law exponent for community size distribution
+  mu: 0.1         # Mixing parameter (fraction of inter-community edges)
+  average_degree: 8
+  min_community: 15

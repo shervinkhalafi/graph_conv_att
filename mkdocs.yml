@@ -1,0 +1,56 @@
+site_name: TMGG Documentation
+site_description: Graph denoising research framework built with Hydra and PyTorch Lightning
+site_author: Igor Krawczuk
+
+nav:
+  - Home: index.md
+  - Get started: get-started.md
+  - Guides:
+      - Configuration: configuration.md
+      - Experiments: experiments.md
+      - Data: data.md
+      - Models: models.md
+      - Cloud execution: cloud.md
+      - Architecture: architecture.md
+      - Extending: extending.md
+  - Reference:
+      - Overview: reference/index.md
+      - tmgg: reference/tmgg.md
+      - Experiments:
+          - Overview: reference/experiments/index.md
+          - Baselines: reference/experiments/baselines.md
+          - DiGress denoising: reference/experiments/digress_denoising.md
+          - GNN denoising: reference/experiments/gnn_denoising.md
+          - Hybrid denoising: reference/experiments/hybrid_denoising.md
+          - Spectral denoising: reference/experiments/spectral_denoising.md
+          - Stages: reference/experiments/stages.md
+      - Experiment utils:
+          - Cloud: reference/experiment_utils/cloud.md
+          - Data: reference/experiment_utils/data.md
+      - Models:
+          - Overview: reference/models/index.md
+          - Attention: reference/models/attention.md
+          - Baselines: reference/models/baselines.md
+          - DiGress: reference/models/digress.md
+          - GNN: reference/models/gnn.md
+          - Hybrid: reference/models/hybrid.md
+          - Layers: reference/models/layers.md
+          - Spectral denoisers: reference/models/spectral_denoisers.md
+      - Modal:
+          - Overview: reference/modal/index.md
+
+theme:
+  name: material
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          inventories:
+            - https://docs.python.org/3/objects.inv
+          options:
+            docstring_style: google
+            inherited_members: true
+            show_source: false

@@ -1,0 +1,21 @@
+# @package _global_
+# Step-based callbacks configuration
+# Patience is measured in validation checks, not epochs
+
+callbacks:
+  early_stopping:
+    monitor: val/loss
+    mode: min
+    # Divergence vs upstream DiGress (no ES callback at all); set very high
+    # to approximate upstream's "train to budget" behaviour while retaining
+    # a safety net.
+    patience: 1000
+    min_delta: 1e-4
+  checkpoint:
+    monitor: val/loss
+    mode: min
+    save_top_k: -1  # Keep all checkpoints to support D-16c evaluate_all_checkpoints
+    save_last: true
+    filename: "model-step={step:06d}-val_loss={val/loss:.4f}"
+    auto_insert_metric_name: false  # Required when metric names contain slashes
+    every_n_train_steps: null  # Use val_check_interval by default

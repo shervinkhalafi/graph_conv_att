@@ -1,0 +1,31 @@
+# @package _global_
+# DiGress SBM — PEARL extra features + BareGraphConv (normalized
+# adjacency) Q/K/V projections, post-fix exact.
+# ==============================================================
+#
+# Stacks the gnnconv-normalized swap on top of
+# ``discrete_sbm_pearl_repro_exact`` (which already carries the four
+# upstream-parity deltas: ``dim_ffy=2048``, ``amsgrad=false``,
+# ``seed=0``, ``use_upstream_hidden_edge_diagonal=true``). Counterpart
+# to ``discrete_sbm_pearl_gnnconv_norm_repro`` for re-running the panel
+# after the hidden-edge-diagonal fix (commit f4f9665a).
+#
+# Polynomial in symmetrically normalized adjacency
+# (``D^{-1/2} A D^{-1/2}``) — same expressive class as the spectral
+# variant (``polynomial in spectrum``), but no eigh during attention.
+
+defaults:
+  - discrete_sbm_pearl_repro_exact
+  - _self_
+
+experiment_name: discrete_sbm_pearl_gnnconv_norm_repro_exact
+wandb_project: discrete-sbm-pearl-gnnconv-norm-repro-exact
+
+model:
+  model:
+    projection_config:
+      use_gnn_q: true
+      use_gnn_k: true
+      use_gnn_v: true
+      gnn_normalize_adj: true
+      gnn_num_terms: 3

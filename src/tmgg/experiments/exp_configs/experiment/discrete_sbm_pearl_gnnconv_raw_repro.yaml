@@ -1,0 +1,27 @@
+# @package _global_
+# DiGress SBM repro variant — PEARL extra features + BareGraphConv
+# (RAW adjacency, non-normalized) Q/K/V projections.
+#
+# Same as ``discrete_sbm_pearl_gnnconv_norm_repro`` but feeding the raw
+# adjacency (no D^{-1/2} A D^{-1/2}) to the polynomial filter. Powers
+# of A grow with degree; under bf16 this is the more overflow-prone of
+# the two settings. We launch it deliberately to ablate whether the
+# normalization in the spatial filter-bank is what makes the spec
+# variant work, or whether the raw-A polynomial recovers comparable
+# expressivity given PEARL's positional signal.
+
+defaults:
+  - discrete_sbm_pearl_repro
+  - _self_
+
+experiment_name: discrete_sbm_pearl_gnnconv_raw_repro
+wandb_project: discrete-sbm-pearl-gnnconv-raw-repro
+
+model:
+  model:
+    projection_config:
+      use_gnn_q: true
+      use_gnn_k: true
+      use_gnn_v: true
+      gnn_normalize_adj: false    # RAW adjacency
+      gnn_num_terms: 3

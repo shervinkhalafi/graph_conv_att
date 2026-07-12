@@ -1,0 +1,64 @@
+# Discrete-diffusion configuration for the MultiLayerBilinearDenoiser
+# spectral architecture under DiGress-style SBM settings.
+#
+# Self-contained: declares the full DiffusionModule stack (noise_process,
+# sampler, schedule, evaluator, lambda_E, AdamW+amsgrad) alongside the
+# MultiLayerBilinearDenoiser architecture block. Loaded via
+# ``models/discrete@model=spectral/multilayer_self_attention`` which
+# fully replaces the base config's ``discrete_default`` entry.
+#
+# Architecture binding: DiGress-compatible categorical edge contract —
+# ``edge_source=class``, ``output_dims_e_class=2``, feat fields null.
+
+_target_: tmgg.training.lightning_modules.diffusion_module.DiffusionModule
+
+model_name: spectral_multilayer_bilinear_discrete_sbm
+
+model:
+  _target_: tmgg.models.spectral_denoisers.bilinear.MultiLayerBilinearDenoiser
+  k: 8
+  d_model: 64
+  num_heads: 4
+  num_layers: 2
+  use_mlp: true
+  mlp_hidden_dim: null
+  dropout: 0.0
+  edge_source: class
+  output_dims_x_class: null
+  output_dims_x_feat: null
+  output_dims_e_class: 2
+  output_dims_e_feat: null
+
+noise_process:
+  _target_: tmgg.diffusion.noise_process.CategoricalNoiseProcess
+  limit_distribution: empirical_marginal
+  schedule: ${model.noise_schedule}
+  x_classes: 2
+  e_classes: 2
+
+sampler:
+  _target_: tmgg.diffusion.sampler.CategoricalSampler
+
+noise_schedule:
+  _target_: tmgg.diffusion.schedule.NoiseSchedule
+  schedule_type: cosine_iddpm
+  timesteps: 500
+
+evaluator:
+  _target_: tmgg.evaluation.graph_evaluator.GraphEvaluator
+  eval_num_samples: 40
+  p_intra: ${data.eval_meta.p_intra}
+  p_inter: ${data.eval_meta.p_inter}
+  clustering_sigma: 0.1
+
+loss_type: cross_entropy
+lambda_E: 5.0
+
+learning_rate: 0.0002
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+
+num_nodes: ${data.num_nodes}
+eval_every_n_steps: 10000
+visualization: ${evaluation.visualization}

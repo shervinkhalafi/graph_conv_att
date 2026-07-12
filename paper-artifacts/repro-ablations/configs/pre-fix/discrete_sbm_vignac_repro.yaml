@@ -1,0 +1,147 @@
+# @package _global_
+# Vignac / GDPO SBM-pretraining reproduction
+# ===========================================
+#
+# Faithfully reproduces upstream DiGress's SBM-pretraining recipe (Vignac
+# et al., ICLR 2023, ``configs/experiment/sbm.yaml``). GDPO retrained from
+# the same recipe verbatim — their pretraining yaml is byte-equivalent to
+# Vignac's modulo ``wandb=disabled`` and a default ``seed=666`` (vs Vignac's
+# 0). GDPO's loss-side changes live in their separate ``*_ppo.yaml`` configs
+# (``train_method='olppo'``, ``val_method='ppo'``, ``lr=1e-5``, ``ppo_sr``,
+# ``innerloop`` etc.) and are explicitly out of scope here.
+#
+# Pinned references:
+# * cvignac/DiGress: ``configs/experiment/sbm.yaml`` @ main
+# * sail-sg/GDPO:    ``configs/experiment/sbm.yaml`` @ main
+# * ``.local-storage/digress-checkpoints/gdpo_sbm/README.md`` (architecture
+#   audit confirming dx=256, n_layers=8, hidden_mlp=128/64/128, X=1, E=2)
+# * ``an internal validation harness (not included)``
+#   (``build_graph_transformer`` documents the live shape of gdpo_sbm.ckpt)
+#
+# Invocation:
+#
+#   tmgg-discrete-gen +experiment=discrete_sbm_vignac_repro
+#
+# This config layers on top of ``base_config_discrete_diffusion_generative``
+# via the Hydra experiment pattern, so the existing ``tmgg-discrete-gen``
+# runner consumes it without a new entry-point.
+
+defaults:
+  # ``data`` is inlined in the base config (not declared via the defaults
+  # list), so we can't use ``override /data``. Plain ``/data: spectre_sbm``
+  # adds the SPECTRE preset to composition; its ``# @package data``
+  # directive ensures it lands at the ``data:`` key, deep-merging over the
+  # base's inline synthetic-SBM block (last-wins).
+  - /data: spectre_sbm
+  # Hydra requires ``override`` entries last in the defaults list.
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_sbm_vignac_repro
+wandb_project: discrete-sbm-vignac-repro
+
+# Seed
+# ----
+# GDPO trained ``gdpo_sbm.ckpt`` with seed=666 (their
+# ``configs/general/general_default.yaml``). Vignac's repo defaults to 0.
+# We pick GDPO's so the run lands in a basin comparable to the public
+# ``gdpo_sbm.ckpt`` for cross-validation.
+seed: 666
+
+# Trainer schedule
+# ----------------
+# Upstream: ``n_epochs=50000`` × ``batch_size=12``. SPECTRE has 128 train
+# graphs, so ~11 batches/epoch ≈ **550k optimizer steps** total.
+#
+# Upstream cadence:
+# * val (loss only) every 100 epochs ≈ 1100 steps;
+# * sampling every 4 vals ≈ 4400 steps.
+#
+# Our cadence (sparser to bound evaluation cost on long runs):
+# * val loss every 5000 steps (~4.5x sparser than upstream);
+# * full sample/MMD/visualisation every 75000 steps (~17x sparser; ~7
+#   evaluations over the run; 40 graphs at T=1000 cost ~13 min on A100).
+#
+# Upstream uses no gradient clipping (``clip_grad: null`` in
+# ``configs/train/train_default.yaml``).
+trainer:
+  max_steps: 550000
+  val_check_interval: 5000
+  check_val_every_n_epoch: null
+  gradient_clip_val: null
+  gradient_clip_algorithm: norm
+
+# Model overrides on top of ``discrete_sbm_official``
+# ---------------------------------------------------
+# Three deliberate divergences from ``discrete_sbm_official.yaml`` to match
+# upstream-DiGress's actual SBM training:
+#
+# 1. **K=1 abstract node convention.** ``gdpo_sbm.ckpt`` has 1 output node
+#    class (single abstract node, no "no-node" slot — that slot is a
+#    molecular-dataset convention). Existing ``discrete_sbm_official.yaml``
+#    uses K=2, which is a divergence from upstream. The K==1 fix in
+#    ``count_{node,edge}_classes_sparse`` (commit ``bfd95bef``) makes the
+#    standard counting / noise-init path support this without a bypass.
+#
+# 2. **``extra_features='all'``.** Upstream activates this via
+#    ``experiment/sbm.yaml::model.extra_features='all'``. Adds cycle
+#    features (``input_dims.X += 6``) and eigenvalue features
+#    (``input_dims.y += 11``). Net mlp shapes match GDPO's checkpoint:
+#    ``mlp_in_X.0.weight=(128,7)``, ``mlp_in_y.0.weight=(128,12)`` (the
+#    +1 on y is from ``use_timestep=True``).
+#
+# 3. **``dim_ffy=2048``.** ``gdpo_sbm.ckpt`` was trained with this shape
+#    (audit-verified via ``safe_inspect.py``). Vignac's
+#    ``experiment/sbm.yaml`` says 256 but the actual GDPO checkpoint uses
+#    the upstream-DiGress higher default 2048. We match the checkpoint so
+#    a weight-load cross-check against ``gdpo_sbm.ckpt`` remains possible.
+#    *Behavioural note:* this is one of the rare GDPO-vs-Vignac deltas at
+#    pretraining — empirical, not loss-related.
+model:
+  # Sampling/MMD/visualisation cadence inside the validation loop. Upstream
+  # samples every 4 val checks (~4400 steps); we set this 17x sparser at
+  # 75000 steps to keep the ~13-min A100 sampling cost in proportion to a
+  # ~550k-step run (~7 evaluations total).
+  eval_every_n_steps: 75000
+  model:
+    input_dims: { X: 1, E: 2, y: 0 }
+    output_dims: { X: 1, E: 2, y: 0 }
+    output_dims_x_class: 1
+    output_dims_x_feat: null
+    output_dims_e_class: 2
+    output_dims_e_feat: null
+    extra_features:
+      _target_: tmgg.models.digress.extra_features.ExtraFeatures
+      extra_features_type: all
+      max_n_nodes: ${data.num_nodes_max_static}
+    hidden_dims:
+      dx: 256
+      de: 64
+      dy: 64
+      n_head: 8
+      dim_ffX: 256
+      dim_ffE: 64
+      dim_ffy: 2048
+  noise_process:
+    x_classes: 1
+    e_classes: 2
+
+# Notes on parity coverage
+# ------------------------
+# Already inherited from ``discrete_sbm_official.yaml`` (no override needed):
+# * ``n_layers=8``, ``dx=256``, ``de=64``, ``dy=64``, ``n_head=8``;
+# * ``hidden_mlp_dims={X:128, E:64, y:128}``;
+# * ``transition='empirical_marginal'``, schedule type ``cosine_iddpm``,
+#   ``timesteps=1000``;
+# * ``loss_type=cross_entropy``, ``lambda_E=5.0``;
+# * Optimizer: AdamW, ``amsgrad=True``, ``lr=2e-4``, ``weight_decay=1e-12``.
+# * Eval: 40 samples per evaluation, clustering kernel ``sigma=0.1``.
+#
+# Already inherited from ``data/spectre_sbm.yaml``:
+# * 128/32/40 split via ``torch.randperm(200, seed=0)`` (matches upstream
+#   byte-for-byte);
+# * ``batch_size=12``;
+# * ``num_nodes_max_static=200`` (consumed by ``ExtraFeatures.max_n_nodes``).
+#
+# Inherited from base infra (no EMA wired anywhere — matches upstream's
+# ``ema_decay=0``; no LR scheduler — matches upstream's flat LR).

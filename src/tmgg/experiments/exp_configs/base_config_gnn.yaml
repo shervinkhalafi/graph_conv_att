@@ -1,0 +1,21 @@
+# GNN denoising: standard GNN model on SBM graphs.
+# Inherits: base_config_denoising → _base_infra + task/denoising
+# Run: uv run tmgg-gnn
+# Override model: uv run tmgg-gnn model=models/gnn/symmetric_gnn
+
+defaults:
+  - base_config_denoising
+  - models/gnn/standard_gnn@model
+  - _self_
+
+experiment_name: "gnn_denoising"
+wandb_project: architecture-study
+_cli_cmd: tmgg-gnn
+
+# Preserve prior cosine-warmup behaviour after _base_infra default flipped
+# to ``type: none`` (parity #38 / D-9). Denoising experiments use warmup
+# unless explicitly disabled per-run.
+scheduler_config:
+  type: cosine_warmup
+  warmup_fraction: 0.02
+  decay_fraction: 0.8

@@ -1,0 +1,19 @@
+# @package data
+# Stochastic Block Model data configuration (n=100)
+
+defaults:
+  - sbm_default
+  - _self_
+
+graph_config:
+  num_nodes: 100
+  # ``max_block_size`` matches the paper's synthetic-SBM geometry (Appendix
+  # B.2.3: "maximum block sizes of 50 and 60" for n=100 and n=200 respectively).
+  # It bounds the enumerated equal-partition baseline (with the inherited default
+  # 15 no partition of 100 nodes into 2-4 blocks even fits — 4*15 < 100); the
+  # block-size heterogeneity sweep uses ``block_size_alpha`` (per-graph Dirichlet,
+  # Eq. 28), which is a per-graph draw unaffected by this cap.
+  max_block_size: 50
+
+# Override the inherited safe upper bound to track ``num_nodes`` here.
+num_nodes_max_static: 100

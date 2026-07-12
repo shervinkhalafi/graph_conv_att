@@ -1,0 +1,37 @@
+{
+  "computed_at": "2026-05-06T08:12:49+00:00",
+  "dataset": "spectre_sbm",
+  "extra": {
+    "datamodule_class": "SpectreSBMDataModule",
+    "n_test_full": 40,
+    "n_train_full": 128
+  },
+  "fingerprint": "4c81347f155703a3",
+  "git_sha": "unknown",
+  "mmd": {
+    "clustering_mmd": 0.18198329227087512,
+    "degree_mmd": 0.0184730162522087,
+    "orbit_mmd": 0.1760432153434263,
+    "spectral_mmd": 0.053086617653009205
+  },
+  "mmd_squared": {
+    "clustering_mmd": 0.03311791866574676,
+    "degree_mmd": 0.0003412523294543668,
+    "orbit_mmd": 0.030991213668451964,
+    "spectral_mmd": 0.0028181889738367882
+  },
+  "n_test": 40,
+  "n_train": 128,
+  "params": {
+    "clustering_bins": 100,
+    "clustering_sigma": 0.1,
+    "degree_sigma": 1.0,
+    "kernel": "gaussian_tv",
+    "orbit_sigma": 30.0,
+    "spectral_bins": 200,
+    "spectral_sigma": 1.0,
+    "subsample_n_test": null,
+    "subsample_n_train": null,
+    "subsample_seed": 42
+  }
+}

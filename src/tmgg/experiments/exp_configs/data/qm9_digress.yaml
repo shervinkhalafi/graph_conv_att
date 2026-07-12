@@ -1,0 +1,10 @@
+# @package data
+_target_: tmgg.data.data_modules.molecular.qm9.QM9DataModule
+batch_size: 1024  # upstream cvignac/DiGress qm9_no_h.yaml::train.batch_size
+num_workers: 16  # upstream cvignac/DiGress qm9_no_h.yaml::dataset.num_workers
+pin_memory: true
+prefetch_factor: 4
+seed: 42
+cache_root: null
+num_nodes_max_static: 9  # QM9 max heavy atoms (Ramakrishnan et al. 2014)
+pad_to_static_n_max: true  # static-shape batches → torch.compile-friendly

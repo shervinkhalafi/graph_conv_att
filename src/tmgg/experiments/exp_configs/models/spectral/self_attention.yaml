@@ -1,0 +1,37 @@
+# Self-Attention denoiser with query/key projections
+# Â = (V W_Q)(V W_K)^T / √d_k (outputs logits)
+
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: self_attention
+
+model:
+  _target_: tmgg.models.spectral_denoisers.self_attention.SelfAttentionDenoiser
+  # Number of eigenvectors
+  k: 8
+  # Key dimension
+  # Sweep: {32, 64, 128}
+  d_k: 64
+  # Wave 7/8 architecture contract: split-field output dims and edge_source selector.
+  # Denoising default: read E_feat, write E_feat with a single scalar channel.
+  edge_source: feat
+  output_dims_x_class: null
+  output_dims_x_feat: null
+  output_dims_e_class: null
+  output_dims_e_feat: 1
+
+# Optimizer settings
+learning_rate: ${learning_rate}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+
+# Scheduler
+scheduler_config: ${scheduler_config}
+
+# Noise settings
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+
+# Loss
+loss_type: ${loss_type}

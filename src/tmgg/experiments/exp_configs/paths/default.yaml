@@ -1,0 +1,14 @@
+# Default paths for report generation.
+#
+# Values match the output conventions from _base_infra.yaml and the
+# standalone study configs. Override via CLI for non-standard layouts.
+
+# Aggregated W&B export (produced by internal export tooling)
+unified_parquet: outputs/unified_runs.parquet
+
+# Report output root
+reports: outputs/reports
+
+# Structural study results (match base_config_eigenstructure / base_config_embedding_study)
+eigenstructure_results: outputs/eigenstructure
+embedding_results: outputs/embedding_study

@@ -1,0 +1,20 @@
+# T3: Cross-Dataset Generalization Report
+# Evaluates how architectures generalize across dataset families.
+defaults:
+  - /paths: default
+
+report:
+  type: cross_dataset
+  data:
+    source: ${paths.unified_parquet}
+    state_filter: finished
+    protocol_filter: distribution
+  dataset_families:
+    synthetic: [sbm, sbm_small, er, erdos_renyi, tree, regular, grid]
+    biological: [enzymes, proteins, pyg_enzymes, pyg_proteins]
+    social: [ego, community]
+  metrics:
+    primary: metric_test_mse
+    higher_is_better: false
+  output:
+    dir: ${paths.reports}/t3_cross_dataset

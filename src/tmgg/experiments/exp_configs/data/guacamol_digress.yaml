@@ -1,0 +1,10 @@
+# @package data
+_target_: tmgg.data.data_modules.molecular.guacamol.GuacaMolDataModule
+batch_size: 32
+num_workers: 4
+pin_memory: true
+prefetch_factor: 4
+seed: 42
+cache_root: null
+num_nodes_max_static: 88  # GuacaMol max from ChEMBL training set (Brown et al. 2018)
+pad_to_static_n_max: true  # static-shape batches → torch.compile-friendly

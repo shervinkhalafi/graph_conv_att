@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use this software or build on this work, please cite the paper below."
+title: "Graph Convolutional Attention: A Spectral Perspective on Graph Denoising and Diffusion"
+abstract: >-
+  Code accompanying the paper. We analyze attention-based graph denoising from a
+  spectral perspective, show linear attention learns an average spectral filter,
+  and introduce Graph Convolutional Attention (GCA), a permutation-equivariant
+  realization that provably improves on linear attention and transfers to
+  DiGress-style discrete diffusion.
+authors:
+  - family-names: Khalafi
+    given-names: Shervin
+  - family-names: Krawczuk
+    given-names: Igor
+    email: igor@krawczuk.eu
+  - family-names: Rozada
+    given-names: Sergio
+  - family-names: Kanatsoulis
+    given-names: Charilaos
+  - family-names: Marques
+    given-names: Antonio G.
+  - family-names: Ribeiro
+    given-names: Alejandro
+year: 2026
+# NOTE: provisional preprint entry — update the venue/DOI once published.
+preferred-citation:
+  type: article
+  title: "Graph Convolutional Attention: A Spectral Perspective on Graph Denoising and Diffusion"
+  authors:
+    - family-names: Khalafi
+      given-names: Shervin
+    - family-names: Krawczuk
+      given-names: Igor
+    - family-names: Rozada
+      given-names: Sergio
+    - family-names: Kanatsoulis
+      given-names: Charilaos
+    - family-names: Marques
+      given-names: Antonio G.
+    - family-names: Ribeiro
+      given-names: Alejandro
+  year: 2026

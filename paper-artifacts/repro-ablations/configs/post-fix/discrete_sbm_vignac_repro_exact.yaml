@@ -1,0 +1,150 @@
+# @package _global_
+# Vignac SBM exact-parity reproduction
+# =====================================
+#
+# Byte-for-byte match against upstream cvignac/DiGress's *published* SBM
+# config. Use this when you want a paper-anchor comparison (DiGress
+# Table 1 r=1.6 / 1.5 / 1.7) without the GDPO-checkpoint compat
+# tweaks that ``discrete_sbm_vignac_repro`` carries.
+#
+# Pinned upstream sources:
+# * ``cvignac/DiGress/configs/experiment/sbm.yaml``
+# * ``cvignac/DiGress/configs/train/train_default.yaml``
+# * ``cvignac/DiGress/configs/general/general_default.yaml``
+# * ``cvignac/DiGress/configs/model/discrete.yaml``
+#
+# Differs from ``discrete_sbm_vignac_repro`` (GDPO-aligned) on:
+# * ``dim_ffy``: 2048 (matches Vignac's live ``GraphTransformer``).
+#   The upstream YAML says 256, but the upstream constructor does not
+#   pass ``hidden_dims.dim_ffy`` into ``XEyTransformerLayer``, so the
+#   runtime layer default 2048 is what actually trains.
+# * ``seed``: 0 (Vignac's ``train_default.yaml`` default).
+#   The GDPO-aligned variant uses 666.
+# * ``amsgrad``: false (PyTorch default).
+#   ``discrete_sbm_official`` sets ``amsgrad=true`` for legacy reasons;
+#   upstream ``train_default.yaml`` does not set ``amsgrad`` so torch's
+#   default applies.
+# * Eval cadence: validation loss every 100 epochs (~1100 steps),
+#   sampling/MMD every 4 val checks (~4400 steps). The GDPO-aligned
+#   variant uses sparser cadence (5000 / 75000) for evaluation cost.
+#   Cost note: 40 generated graphs × T=1000 sampling ≈ 13 min on
+#   A100; 125 sample-eval cycles over a 550k-step run is ≈ 27h of
+#   sampling on top of training. Plan accordingly.
+#
+# Invocation:
+#
+#   tmgg-discrete-gen +experiment=discrete_sbm_vignac_repro_exact
+#
+# This is the configuration we expect to land closest to DiGress
+# Table 1's reported numbers. Anchor comparisons in
+# ``internal notes (not included)`` should treat this as
+# the "best-effort exact reproduction" baseline.
+
+defaults:
+  # Same composition as ``discrete_sbm_vignac_repro``: pull SBM data
+  # via the @package data mechanism, override the discrete model on
+  # ``models/discrete@model``, then ``_self_`` last.
+  - /data: spectre_sbm
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_sbm_vignac_repro_exact
+wandb_project: discrete-sbm-vignac-repro-exact
+
+# Seed
+# ----
+# Vignac's ``train_default.yaml`` sets ``seed=0``. The GDPO-aligned
+# variant uses 666 because ``gdpo_sbm.ckpt`` was trained with that
+# seed. Use 0 here for paper parity.
+seed: 0
+
+# Trainer schedule — matches upstream ``general_default.yaml`` +
+# ``experiment/sbm.yaml`` cadence verbatim.
+# -----------------------------------------------------------------
+# Upstream: ``n_epochs=50000`` × ``batch_size=12``, SPECTRE has 128
+# train graphs → ~11 batches/epoch → ~550k optimizer steps total.
+#
+# Upstream val cadence: ``check_val_every_n_epochs=100``
+# (overrides ``general_default.yaml``'s default of 5).
+# Upstream sample cadence: ``sample_every_val=4`` (every 4th val).
+#
+# Lightning's ``check_val_every_n_epoch=100`` is exactly upstream;
+# ``val_check_interval=null`` lets Lightning gate on epoch count
+# rather than step count (matches upstream behaviour byte-for-byte).
+trainer:
+  max_steps: 550000
+  check_val_every_n_epoch: 100
+  val_check_interval: null
+  gradient_clip_val: null  # upstream ``train_default.yaml::clip_grad: null``
+  gradient_clip_algorithm: norm
+
+# Model overrides on top of ``discrete_sbm_official``
+# ---------------------------------------------------
+# Model and optimiser/cadence deltas to match Vignac's live upstream
+# implementation and published config where the GDPO-aligned variant
+# diverges.
+model:
+  # Sample/MMD cadence inside validation. Upstream samples every 4
+  # val checks; with val every 100 epochs (~1100 steps) that is
+  # every ~4400 steps. We approximate via step-based gating since
+  # our codebase doesn't expose a "sample every N val checks" knob;
+  # numerical effect is the same.
+  eval_every_n_steps: 4400
+  # ``discrete_sbm_official.yaml`` sets ``amsgrad: true`` — override
+  # to match upstream's PyTorch-default ``amsgrad=false``.
+  amsgrad: false
+  model:
+    # K=1 abstract-node convention (same as the GDPO-aligned variant).
+    # Matches upstream — ``configs/model/discrete.yaml`` does not
+    # configure node types for SBM; the data path emits a single
+    # abstract class.
+    input_dims: { X: 1, E: 2, y: 0 }
+    output_dims: { X: 1, E: 2, y: 0 }
+    output_dims_x_class: 1
+    output_dims_x_feat: null
+    output_dims_e_class: 2
+    output_dims_e_feat: null
+    # ``extra_features='all'`` activates cycle counts + Laplacian
+    # eigenvalues, per upstream ``experiment/sbm.yaml::model.extra_features='all'``.
+    extra_features:
+      _target_: tmgg.models.digress.extra_features.ExtraFeatures
+      extra_features_type: all
+      max_n_nodes: ${data.num_nodes_max_static}
+    # Match Vignac's live upstream implementation, not the dead YAML
+    # field. Upstream ``GraphTransformer`` omits ``dim_ffy`` when it
+    # builds ``XEyTransformerLayer``, so the runtime default is 2048.
+    hidden_dims:
+      dim_ffy: 2048
+    # Upstream padding-masks the hidden edge tensor after ``mlp_in_E``
+    # but does not zero its diagonal until the final residual output.
+    use_upstream_hidden_edge_diagonal: true
+  noise_process:
+    x_classes: 1
+    e_classes: 2
+
+# Notes on parity coverage
+# ------------------------
+# Inherited from ``discrete_sbm_official.yaml`` (no override needed,
+# matches upstream verbatim):
+# * ``n_layers=8``, ``dx=256``, ``de=64``, ``dy=64``, ``n_head=8``;
+# * ``dim_ffX=256``, ``dim_ffE=64``, ``dim_ffy=2048``;
+# * ``hidden_mlp_dims={X:128, E:64, y:128}``;
+# * ``transition='empirical_marginal'`` (≡ upstream's ``transition='marginal'``,
+#   both call ``MarginalUniformTransition`` with empirical x/e marginals);
+# * Schedule type ``cosine_iddpm`` (≡ upstream's ``cosine``, both use
+#   ``cosine_beta_schedule_discrete``);
+# * ``timesteps=1000``;
+# * ``loss_type=cross_entropy``, ``lambda_E=5.0`` (= upstream's
+#   ``lambda_train=[5, 0]``);
+# * Optimizer: AdamW, ``lr=2e-4``, ``weight_decay=1e-12`` (per upstream
+#   ``train_default.yaml``);
+# * Eval: 40 samples per evaluation, clustering kernel ``sigma=0.1``.
+#
+# Inherited from ``data/spectre_sbm.yaml``:
+# * 128/32/40 split via ``torch.randperm(200, seed=0)`` (matches upstream
+#   byte-for-byte);
+# * ``batch_size=12`` (= upstream ``experiment/sbm.yaml::train.batch_size``);
+# * ``num_nodes_max_static=200`` (consumed by ``ExtraFeatures.max_n_nodes``).
+#
+# Inherited from base infra (no EMA wired anywhere — matches upstream's
+# ``ema_decay=0``; no LR scheduler — matches upstream's flat LR).

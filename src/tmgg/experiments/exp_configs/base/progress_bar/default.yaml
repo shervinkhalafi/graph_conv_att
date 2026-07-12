@@ -1,0 +1,9 @@
+# Step-based Rich progress bar configuration
+# Shows: Training (E2) ━━━━ 12500/50000 25% 0:15:32 train_loss: 0.0234
+
+progress_bar:
+  metrics_to_show:
+    - train/loss
+    - val/loss
+  show_epoch: true
+  metrics_format: ".4f"

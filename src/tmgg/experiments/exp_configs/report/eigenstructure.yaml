@@ -1,0 +1,30 @@
+# T5: Eigenstructure Report
+# Analyzes spectral properties of graphs under noise and denoising.
+defaults:
+  - /paths: default
+
+report:
+  type: eigenstructure
+  data:
+    results_dir: ${paths.eigenstructure_results}
+    datasets: [sbm, er, tree, regular, enzymes]
+  noise:
+    types: [gaussian, digress]
+    levels: [0.01, 0.05, 0.1, 0.15, 0.2]
+    k_values: [1, 4, 8]
+  # Improvement-gap surrogate (eq. 18 in NeurIPS 2026 paper draft).
+  # Measures tr(Cov(E[B | Λ̃_k])) where B = V̂_k^T A V̂_k and V̂_k is
+  # Procrustes-aligned to the clean top-k basis. See
+  # src/tmgg/experiments/eigenstructure_study/analyzer.py::estimate_improvement_gap.
+  surrogate:
+    # Sweep reported as a curve per dataset × noise level.
+    k_values: [4, 8, 16, 32]
+    estimator: knn
+    knn_neighbours: 10
+    num_bins: 4
+    # Plots the downstream report should emit:
+    # - gap_vs_k:     ĝ(k) at each noise level, one curve per dataset
+    # - gap_vs_noise: ĝ(ε) at each k, one curve per dataset
+    plots: [gap_vs_k, gap_vs_noise]
+  output:
+    dir: ${paths.reports}/t5_eigenstructure

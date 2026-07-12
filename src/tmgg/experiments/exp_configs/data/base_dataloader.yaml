@@ -1,0 +1,17 @@
+# @package data
+# Base dataloader configuration - common parameters that can be inherited
+# Use this as a base for specific dataset configurations
+
+_target_: tmgg.data.GraphDataModule
+
+# Common data loader parameters
+num_workers: 4
+pin_memory: true
+batch_size: 100
+
+# Default train/val split ratios (remainder goes to test)
+train_ratio: 0.6
+val_ratio: 0.2
+
+# Reproducibility seed (interpolated from global config)
+seed: ${seed}

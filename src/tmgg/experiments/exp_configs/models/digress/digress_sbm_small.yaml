@@ -1,0 +1,30 @@
+# Small DiGress model for stage 1 POC with official optimizer settings
+#
+# Architecture: Scaled-down (4 layers vs 8 in official SBM config)
+# Optimizer: Official DiGress settings (AdamW + amsgrad, LR=0.0002)
+
+defaults:
+  - digress_base
+  - _self_
+
+model:
+  n_layers: 4
+  hidden_dims:
+    dx: 128
+    de: 32
+    dy: 32
+    n_head: 4
+    dim_ffX: 128
+    dim_ffE: 32
+    dim_ffy: 128
+  hidden_mlp_dims:
+    X: 64
+    E: 32
+    y: 64
+
+# Official DiGress optimizer settings
+learning_rate: 0.0002
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+loss_type: "bce_logits"

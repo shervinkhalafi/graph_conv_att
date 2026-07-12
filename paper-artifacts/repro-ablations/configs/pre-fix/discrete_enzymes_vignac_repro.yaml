@@ -1,0 +1,94 @@
+# @package _global_
+# Vignac SBM-recipe transplanted to ENZYMES (TUDataset, PyG)
+# ==========================================================
+#
+# Mirror of ``discrete_sbm_vignac_repro`` but with ``/data: pyg_enzymes``
+# instead of ``/data: spectre_sbm``. We keep the upstream-DiGress SBM
+# architecture verbatim (8 layers, dx=256, T=1000, marginal transitions,
+# K=1 abstract-node) and adopt the same step-based schedule / val
+# cadence as the SBM repro. ENZYMES has n ∈ [2, 126] — well inside the
+# memory envelope of the SBM-tuned architecture (SPECTRE-SBM tops at
+# n=187), so batch_size=12 fits on A100-40GB without filtering.
+#
+# Caveat carried from PROTEINS attempt: the ``GraphEvaluator`` Wald
+# test the ``discrete_sbm_official`` config wires up is SBM-specific
+# and not meaningful here; the dummy ``eval_meta`` values just satisfy
+# the Hydra interpolation. Degree/clustering/orbit MMD remain
+# meaningful.
+#
+# Invocation:
+#
+#   tmgg-discrete-gen +experiment=discrete_enzymes_vignac_repro
+
+defaults:
+  - /data: pyg_enzymes
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_enzymes_vignac_repro
+wandb_project: discrete-enzymes-vignac-repro
+
+seed: 666
+
+# Data overrides on top of ``pyg_enzymes.yaml``
+# ---------------------------------------------
+# * ``batch_size=12`` matches the SBM repro starting point.
+# * ``num_nodes_max_static=126`` is the published ENZYMES max and is
+#   consumed by the model via ``${data.num_nodes_max_static}`` for
+#   ``ExtraFeatures.max_n_nodes``.
+# * ``eval_meta`` carries dummy SBM parameters because the inherited
+#   ``discrete_sbm_official`` evaluator interpolates ``p_intra`` /
+#   ``p_inter`` from this block. Wald-test output is meaningless on
+#   ENZYMES — values are placeholders.
+data:
+  batch_size: 12
+  num_nodes_max_static: 126
+  eval_meta:
+    p_intra: 0.3
+    p_inter: 0.005
+
+# Trainer schedule — mirrors ``discrete_sbm_vignac_repro``
+# --------------------------------------------------------
+# 550k optimizer steps, val-loss every 5k, full sample/MMD every 75k.
+# ENZYMES train split (~420 graphs at 0.7 train_ratio) ×
+# ``samples_per_graph=100`` ≈ 42k effective items / batch 12 ≈ 3.5k
+# steps per pseudo-epoch.
+trainer:
+  max_steps: 550000
+  val_check_interval: 5000
+  check_val_every_n_epoch: null
+  gradient_clip_val: null
+  gradient_clip_algorithm: norm
+
+# Model overrides on top of ``discrete_sbm_official``
+# ---------------------------------------------------
+# Two deltas (the ``dim_ffy=2048`` GDPO-checkpoint compat from
+# ``discrete_sbm_vignac_repro`` is dropped — ENZYMES doesn't share
+# weights with ``gdpo_sbm.ckpt``, so we revert to Vignac's
+# ``experiment/sbm.yaml`` value of 256):
+#   1. K=1 abstract-node (no node types in ENZYMES adjacency-only path);
+#   2. ``extra_features='all'`` (cycle counts + Laplacian eigvals/eigvecs).
+model:
+  eval_every_n_steps: 75000
+  model:
+    input_dims: { X: 1, E: 2, y: 0 }
+    output_dims: { X: 1, E: 2, y: 0 }
+    output_dims_x_class: 1
+    output_dims_x_feat: null
+    output_dims_e_class: 2
+    output_dims_e_feat: null
+    extra_features:
+      _target_: tmgg.models.digress.extra_features.ExtraFeatures
+      extra_features_type: all
+      max_n_nodes: ${data.num_nodes_max_static}
+    hidden_dims:
+      dx: 256
+      de: 64
+      dy: 64
+      n_head: 8
+      dim_ffX: 256
+      dim_ffE: 64
+      dim_ffy: 256
+  noise_process:
+    x_classes: 1
+    e_classes: 2

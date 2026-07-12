@@ -1,0 +1,37 @@
+{
+  "computed_at": "2026-05-06T08:14:47+00:00",
+  "dataset": "pyg_enzymes",
+  "extra": {
+    "datamodule_class": "GraphDataModule",
+    "n_test_full": 120,
+    "n_train_full": 420
+  },
+  "fingerprint": "4c81347f155703a3",
+  "git_sha": "unknown",
+  "mmd": {
+    "clustering_mmd": 0.10219331051904926,
+    "degree_mmd": 0.01731367426822355,
+    "orbit_mmd": 0.013159855199302361,
+    "spectral_mmd": 0.05336589247178583
+  },
+  "mmd_squared": {
+    "clustering_mmd": 0.010443472714842823,
+    "degree_mmd": 0.0002997633166661462,
+    "orbit_mmd": 0.0001731817888666054,
+    "spectral_mmd": 0.0028479184793102075
+  },
+  "n_test": 120,
+  "n_train": 420,
+  "params": {
+    "clustering_bins": 100,
+    "clustering_sigma": 0.1,
+    "degree_sigma": 1.0,
+    "kernel": "gaussian_tv",
+    "orbit_sigma": 30.0,
+    "spectral_bins": 200,
+    "spectral_sigma": 1.0,
+    "subsample_n_test": null,
+    "subsample_n_train": null,
+    "subsample_seed": 42
+  }
+}

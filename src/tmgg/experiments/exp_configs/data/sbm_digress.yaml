@@ -1,0 +1,11 @@
+# @package data
+# SBM data configuration matching vanilla DiGress settings
+#
+# Uses batch_size=12 as in the original DiGress SBM experiments.
+
+defaults:
+  - sbm_default
+  - _self_
+
+# Match vanilla DiGress batch size
+batch_size: 12

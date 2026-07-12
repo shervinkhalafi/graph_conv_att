@@ -1,0 +1,33 @@
+# models/modified_attention/mod_attention.yaml
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: modified_attention
+
+model:
+  _target_: tmgg.models.modified_attention.ModifiedAttentionDenoiser
+  k: 16
+  d_model: 64
+  num_heads: 4
+  num_layers: 2
+  dropout: 0.0
+  filter_qk: false
+  filter_v: false
+  filter_num_terms: 2
+  apply_softmax: true
+
+
+# Optimizer settings
+learning_rate: ${learning_rate}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+
+# Scheduler
+scheduler_config: ${scheduler_config}
+
+# Noise settings
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+
+# Loss
+loss_type: ${loss_type}

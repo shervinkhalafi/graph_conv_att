@@ -1,0 +1,57 @@
+# Grid search experiments
+#
+# Step counts are computed via the epochs_to_steps(num_samples, batch_size,
+# epochs) resolver. For SBM with fixed block_sizes the training dataset
+# length equals num_samples_per_graph; with grid_gaussian defaults (2000
+# samples, batch 32) that gives ceil(2000/32) = 63 steps/epoch. Non-SBM
+# datasets compute training size differently (num_graphs * train_fraction)
+# and would need adjusted resolver arguments.
+
+defaults:
+  - base_config_denoising
+  - models/spectral/filter_bank@model  # Default model, will be overridden
+  - override data: grid_gaussian
+  - override /base/logger: grid_wandb
+  - override /base/callbacks: grid_search
+  - _self_
+
+# Experiment identification
+experiment_name: "grid_search_4k_params"
+wandb_project: graph-denoising
+
+# Preserve prior cosine-warmup behaviour after _base_infra default flipped
+# to ``type: none`` (parity #38 / D-9). Grid-search runs use warmup
+# unless explicitly disabled per-run.
+scheduler_config:
+  type: cosine_warmup
+  warmup_fraction: 0.02
+  decay_fraction: 0.8
+
+# Training: 200 epoch-equivalents converted to steps, validate every 5 epoch-equivalents
+trainer:
+  max_steps: ${epochs_to_steps:${data.samples_per_graph},${data.batch_size},200}
+  val_check_interval: ${epochs_to_steps:${data.samples_per_graph},${data.batch_size},5}
+  gradient_clip_val: 1.0
+  enable_checkpointing: true
+  enable_model_summary: true
+  enable_progress_bar: true
+  deterministic: true
+
+# Override model parameters with data config values
+model:
+  noise_type: ${noise_type}
+  noise_levels: ${noise_levels}
+  seed: ${seed}
+  learning_rate: ${learning_rate}
+
+# Grid search parameters (to be swept)
+noise_level: 0.1      # Will be overridden
+model_name: "unknown" # Will be set based on model choice
+
+# Hydra output directory (version-based for checkpoint resumption)
+hydra:
+  run:
+    dir: outputs/v${tmgg_version:}/grid_search/${model_name}/${noise_type}/lr${learning_rate}/eps${noise_level}
+  sweep:
+    dir: outputs/sweeps/grid_search/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${model_name}_${noise_type}_lr${learning_rate}_eps${noise_level}

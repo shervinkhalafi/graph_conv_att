@@ -1,0 +1,119 @@
+# @package _global_
+# DiGress QM9 reproduction (Vignac et al., ICLR 2023, Table 4).
+#
+# Faithful to upstream cvignac/DiGress @ main:
+#   configs/experiment/qm9_no_h.yaml + configs/model/discrete.yaml +
+#   configs/train/train_default.yaml + configs/dataset/qm9.yaml.
+# See ``internal notes (not included)`` for
+# the full upstream → ours comparison this yaml addresses.
+
+defaults:
+  - /data: qm9_digress
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_qm9_digress_repro
+wandb_project: discrete-qm9-digress-repro
+
+seed: 0
+
+# Top-level optimizer hyperparameters. The model preset's
+# ``learning_rate: 2e-4`` already binds to the optimizer correctly; we
+# pin the *top-level* fields here so the run-name builder
+# (``training/orchestration/run_experiment.py:267``) records the same
+# values that the model actually uses, instead of inheriting the
+# spectral-arch defaults from ``_base_infra.yaml`` (lr=1e-3, wd=1e-4)
+# that mislabel every digress-repro run name.
+learning_rate: 2e-4
+weight_decay: 1e-12
+
+trainer:
+  # Upstream qm9_no_h.yaml: n_epochs=1000, batch_size=1024.
+  # ⌈98000 / 1024⌉ * 1000 ≈ 96,000 steps. Round to 100k for a clean cap.
+  max_steps: 100000
+  val_check_interval: 1000
+  check_val_every_n_epoch: null
+  gradient_clip_val: null
+  # Pin precision so the YAML is the source of truth instead of
+  # ``scripts/run-digress-repro-modal.zsh:62`` (`PRECISION` env var).
+  # Both currently agree, but the launcher's unconditional override
+  # would otherwise let ``PRECISION=fp32`` silently retune training
+  # without the YAML reflecting it.
+  precision: bf16-mixed
+
+# Same rationale as ``trainer.precision``: pin so the launcher's
+# unconditional ``modal_debug=${MODAL_DEBUG}`` (zsh:63) is identity-
+# redundant. ``false`` enables ``PYTHONOPTIMIZE=1`` in the Modal
+# subprocess (strips asserts) per ``modal/_functions.py:521-528``.
+modal_debug: false
+
+model:
+  eval_every_n_steps: 5000
+  num_nodes: 9
+  evaluator:
+    _target_: tmgg.evaluation.molecular.MolecularEvaluator.for_qm9
+    # Upstream general_default.yaml::samples_to_generate=512.
+    eval_num_samples: 512
+  # Upstream qm9_no_h.yaml uses configs/model/discrete.yaml defaults
+  # (n_layers=5 in the file; qm9_no_h.yaml overrides to n_layers=9).
+  # hidden_dims = {dx:256, de:64, dy:64, n_head:8, dim_ffX:256,
+  #                dim_ffE:128, dim_ffy:128}
+  # hidden_mlp_dims = {X:256, E:128, y:128}
+  # diffusion_steps = 500
+  # extra_features = 'all'
+  noise_schedule:
+    timesteps: 500
+  model:
+    n_layers: 9
+    input_dims: { X: 4, E: 5, y: 0 }
+    output_dims: { X: 4, E: 5, y: 0 }
+    output_dims_x_class: 4
+    output_dims_x_feat: null
+    output_dims_e_class: 5
+    output_dims_e_feat: null
+    hidden_dims:
+      dx: 256
+      de: 64
+      dy: 64
+      n_head: 8
+      dim_ffX: 256
+      dim_ffE: 128
+      dim_ffy: 128
+    hidden_mlp_dims:
+      X: 256
+      E: 128
+      y: 128
+    # Upstream activates BOTH structural ``extra_features='all'`` (cycle
+    # counts + Laplacian eigenfeatures) AND domain
+    # ``ExtraMolecularFeatures`` (charge + valency on X, mol weight on
+    # y). See ``upstream src/main.py:128-136``: both providers are
+    # passed to the model. Our ``GraphTransformer`` accepts a single
+    # ``ExtraFeaturesProvider``, so we stack them via
+    # ``CompositeExtraFeatures``. Total dim adjustments:
+    #   structural (all): +6 X, 0 E, +11 y
+    #   domain (molecular): +2 X, 0 E, +1 y
+    #   net: +8 X, 0 E, +12 y
+    # Per-dataset constants (valencies, atom_weights, max_weight) come
+    # from ``upstream src/datasets/qm9_dataset.py:227-234`` (no-H QM9).
+    extra_features:
+      _target_: tmgg.models.digress.extra_molecular_features.CompositeExtraFeatures
+      providers:
+        - _target_: tmgg.models.digress.extra_features.ExtraFeatures
+          extra_features_type: all
+          max_n_nodes: ${data.num_nodes_max_static}
+        - _target_: tmgg.models.digress.extra_molecular_features.ExtraMolecularFeatures
+          valencies: [4, 3, 2, 1]                  # C, N, O, F
+          atom_weights: [12, 14, 16, 19]
+          max_weight: 150
+  # The ``discrete_sbm_official`` model preset defaults
+  # ``noise_process.x_classes=2``, ``e_classes=2`` (SBM convention).
+  # QM9 has 4 atom types + 5 bond types (no-bond + 4 bond orders); the
+  # noise process must match so the empirical marginals
+  # (``initialize_from_data``) and the forward / reverse process operate
+  # on the same class cardinality the data + model expect. Without this
+  # override, ``count_node_classes_sparse`` raises an AssertionError at
+  # preflight ("per-node feature dimension 4 disagrees with
+  # num_node_classes=2").
+  noise_process:
+    x_classes: 4
+    e_classes: 5

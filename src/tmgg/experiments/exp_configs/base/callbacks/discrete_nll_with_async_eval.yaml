@@ -1,0 +1,25 @@
+# @package _global_
+# Callback group composing the discrete-NLL checkpoint/early-stopping
+# pair with the async-eval spawn callback.
+#
+# Use via ``base/callbacks=discrete_nll_with_async_eval`` (the override
+# path matches the defaults entry in ``_base_infra.yaml``:
+# ``base/callbacks: default``; a plain ``callbacks=...`` would not
+# resolve to this nested group).
+#
+# This is the discrete-diffusion analogue of
+# ``default_with_async_eval``: same async_eval_spawn defaults, but the
+# checkpoint+early_stopping callbacks monitor ``val/epoch_NLL`` (the
+# proper variational ELBO) instead of ``val/loss``. Used by every
+# ``base_config_discrete_diffusion_generative``-derived experiment so
+# the panel runs both pick checkpoints by NLL AND emit gen-val/* via
+# the async-eval pipeline.
+#
+# Combined with ``callbacks.async_eval_spawn.enabled=true`` (and a
+# schedule override on sweep launches), this is the entry point for
+# discrete-diffusion async-eval mode.
+
+defaults:
+  - discrete_nll
+  - async_eval_spawn
+  - _self_

@@ -1,0 +1,43 @@
+# Linear Positional Encoding denoiser
+# Â = V W V^T + 1 b^T + b 1^T
+
+_target_: tmgg.training.lightning_modules.denoising_module.SingleStepDenoisingModule
+
+model_name: linear_pe
+
+model:
+  _target_: tmgg.models.spectral_denoisers.LinearPE
+  # Number of eigenvectors (k in R^{n×k})
+  # Sweep: {2, 4, 8, 16, 32, 64}
+  k: 16
+  # Maximum nodes for the learnable bias term b ∈ R^{max_nodes}.
+  # Must be >= the largest graph in the dataset, otherwise the model raises a
+  # ValueError (bias cannot cover the graph). Per-dataset minimums:
+  #   PROTEINS=620, COLLAB=492, DEEZER=363, IMDB=136, ENZYMES=126, synthetic-SBM=200.
+  # For Figure-1 spectral runs, override e.g. `model.max_nodes=620` on PROTEINS.
+  max_nodes: 200
+  # Whether to use node-specific bias
+  use_bias: true
+  # Wave 7/8 architecture contract: split-field output dims and edge_source selector.
+  # Denoising default: read E_feat, write E_feat with a single scalar channel.
+  edge_source: feat
+  output_dims_x_class: null
+  output_dims_x_feat: null
+  output_dims_e_class: null
+  output_dims_e_feat: 1
+
+# Optimizer settings
+learning_rate: ${learning_rate}
+weight_decay: ${weight_decay}
+optimizer_type: ${optimizer_type}
+
+# Scheduler
+scheduler_config: ${scheduler_config}
+
+# Noise settings
+noise_type: ${noise_type}
+noise_levels: ${noise_levels}
+eval_noise_levels: ${eval_noise_levels}
+
+# Loss
+loss_type: ${loss_type}

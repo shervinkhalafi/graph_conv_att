@@ -1,0 +1,11 @@
+# {{ cookiecutter.experiment_name }}: {{ cookiecutter.experiment_slug }} on SBM graphs.
+# Inherits: {{ cookiecutter.base_config_parent }}
+# Run: uv run {{ cookiecutter.cli_name }}
+
+defaults:
+  - {{ cookiecutter.base_config_parent }}
+  - models/{{ cookiecutter.model_family }}/{{ cookiecutter.model_name }}@model
+  - _self_
+
+experiment_name: {{ cookiecutter.experiment_slug }}
+wandb_project: {{ cookiecutter.wandb_project }}

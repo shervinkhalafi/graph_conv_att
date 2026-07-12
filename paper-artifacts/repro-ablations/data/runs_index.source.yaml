@@ -1,0 +1,302 @@
+# runs_index.source.yaml
+# Hand-maintained source-of-truth for run lineage, variant labels, and
+# qualitative health flags. Refresh script (the internal refresh pipeline (not included)) merges
+# this with wandb-derived metadata to build runs_index.csv.
+#
+# Update protocol: when a new run launches, add a stub entry here with
+# at least {run_id, dataset, variant, postfix, config_name,
+# parent_run_id, continuation_type, health, notes}. Refresh.py fills the
+# rest from wandb. See internal notes (not included).
+
+runs:
+  # ============================================================
+  # SBM panel — pre-fix (mask-bug-invalidated)
+  # ============================================================
+  - run_id: 12s2b4a7
+    dataset: sbm
+    variant: vignac
+    postfix: false
+    config_name: discrete_sbm_vignac_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Anchor for the SBM panel; ran 24h, crashed at Modal timeout."
+
+  - run_id: e5pd9drt
+    dataset: sbm
+    variant: vignac_spectral
+    postfix: false
+    config_name: discrete_sbm_vignac_spectral_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Killed 2026-05-06 ~13:30 UTC during mask-bug cleanup."
+
+  - run_id: s07qwx3b
+    dataset: sbm
+    variant: pearl
+    postfix: false
+    config_name: discrete_sbm_pearl_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Cleanest improvement signal pre-fix; orbit MMD ~0.10 vs vignac ~0.14."
+
+  - run_id: jbraoj7o
+    dataset: sbm
+    variant: pearl_spectral
+    postfix: false
+    config_name: discrete_sbm_pearl_spectral_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Within noise of plain pearl pre-fix."
+
+  - run_id: rarihsee
+    dataset: sbm
+    variant: pearl_gnnconv_norm
+    postfix: false
+    config_name: discrete_sbm_pearl_gnnconv_norm_repro
+    parent_run_id: null
+    continuation_type: original
+    health: elevated_grad
+    notes: "Elevated grad_norm (1.49) but converged."
+
+  - run_id: qao36vwu
+    dataset: sbm
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_sbm_pearl_gnnconv_raw_repro
+    parent_run_id: null
+    continuation_type: original
+    health: blew_up
+    notes: "grad_norm 2.4e18, lr Infinity. First of the unviable raw chain."
+
+  - run_id: g1g6xpx1
+    dataset: sbm
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_sbm_pearl_gnnconv_raw_repro
+    parent_run_id: qao36vwu
+    continuation_type: manual_resume_from_checkpoint
+    health: blew_up
+    notes: "Same blow-up signature; 14.7h until killed."
+
+  - run_id: uuifd9v3
+    dataset: sbm
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_sbm_pearl_gnnconv_raw_repro
+    parent_run_id: g1g6xpx1
+    continuation_type: auto_reassign_force_fresh
+    health: blew_up
+    notes: "Modal auto-reassign 1/3; <10 min."
+
+  - run_id: bepjqwqz
+    dataset: sbm
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_sbm_pearl_gnnconv_raw_repro
+    parent_run_id: uuifd9v3
+    continuation_type: auto_reassign_force_fresh
+    health: blew_up
+    notes: "Modal auto-reassign 2/3; <10 min."
+
+  - run_id: g6y8ubfg
+    dataset: sbm
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_sbm_pearl_gnnconv_raw_repro
+    parent_run_id: bepjqwqz
+    continuation_type: auto_reassign_force_fresh
+    health: blew_up
+    notes: "Modal auto-reassign 3/3, chain ended via UI cancel."
+
+  # ============================================================
+  # ENZYMES panel — pre-fix (mask-bug-invalidated)
+  # ============================================================
+  - run_id: l1nk0622
+    dataset: enzymes
+    variant: vignac
+    postfix: false
+    config_name: discrete_enzymes_vignac_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Finished at step 525k. Mask-bug invalidated; not a usable reference."
+
+  - run_id: ge461v1o
+    dataset: enzymes
+    variant: pearl
+    postfix: false
+    config_name: discrete_enzymes_pearl_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Crashed as collateral of the _gnnconv_raw cancellation."
+
+  - run_id: bhqss75w
+    dataset: enzymes
+    variant: pearl
+    postfix: false
+    config_name: discrete_enzymes_pearl_repro
+    parent_run_id: ge461v1o
+    continuation_type: auto_reassign_force_fresh
+    health: invalidated_mask_bug
+    notes: "Modal auto-reassign with default force_fresh=True; discarded ge461v1o checkpoint, started step 0; killed by user 8 min."
+
+  - run_id: vejeny0f
+    dataset: enzymes
+    variant: pearl
+    postfix: false
+    config_name: discrete_enzymes_pearl_repro
+    parent_run_id: ge461v1o
+    continuation_type: manual_resume_from_checkpoint
+    health: invalidated_mask_bug
+    notes: "Manual relaunch with force_fresh=false; resumed from ge461v1o last.ckpt; killed during mask-bug cleanup."
+
+  - run_id: 4n28svrj
+    dataset: enzymes
+    variant: pearl_spectral
+    postfix: false
+    config_name: discrete_enzymes_pearl_spectral_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Best orbit MMD on (buggy) enzymes panel: 0.097."
+
+  - run_id: txfr1vms
+    dataset: enzymes
+    variant: pearl_gnnconv_norm
+    postfix: false
+    config_name: discrete_enzymes_pearl_gnnconv_norm_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Failed at 4.4h; cause infra not numerical."
+
+  - run_id: ly0d6lyi
+    dataset: enzymes
+    variant: pearl_gnnconv_norm
+    postfix: false
+    config_name: discrete_enzymes_pearl_gnnconv_norm_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Failed at 11h, healthy gradients at point of failure → infra cause."
+
+  - run_id: zyawhwrx
+    dataset: enzymes
+    variant: pearl_gnnconv_norm
+    postfix: false
+    config_name: discrete_enzymes_pearl_gnnconv_norm_repro
+    parent_run_id: null
+    continuation_type: original
+    health: invalidated_mask_bug
+    notes: "Killed during mask-bug cleanup; only 75k cycle, never matured."
+
+  - run_id: dt0ux9zh
+    dataset: enzymes
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_enzymes_pearl_gnnconv_raw_repro
+    parent_run_id: null
+    continuation_type: original
+    health: blew_up
+    notes: "grad_norm 7600, lr 1.1e-3, orbit MMD 0.54. Killed 17.9h."
+
+  - run_id: b7lqqac8
+    dataset: enzymes
+    variant: pearl_gnnconv_raw
+    postfix: false
+    config_name: discrete_enzymes_pearl_gnnconv_raw_repro
+    parent_run_id: dt0ux9zh
+    continuation_type: auto_reassign_force_fresh
+    health: blew_up
+    notes: "Modal auto-reassign; failed in 6 min; chain end."
+
+  # ============================================================
+  # SBM panel — post-fix (mask-fix architecture)
+  # ============================================================
+  - run_id: cgfv3f85
+    dataset: sbm
+    variant: vignac
+    postfix: true
+    config_name: discrete_sbm_vignac_repro_exact
+    parent_run_id: 12s2b4a7
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of the SBM vanilla DiGress paper-anchor parity reference."
+
+  - run_id: k4iiw5sg
+    dataset: sbm
+    variant: pearl
+    postfix: true
+    config_name: discrete_sbm_pearl_repro_exact
+    parent_run_id: s07qwx3b
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of plain PEARL on SBM."
+
+  - run_id: qukgm6zu
+    dataset: sbm
+    variant: pearl_spectral
+    postfix: true
+    config_name: discrete_sbm_pearl_spectral_repro_exact
+    parent_run_id: jbraoj7o
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of pearl+spectral attention on SBM."
+
+  - run_id: 5qchu8c4
+    dataset: sbm
+    variant: pearl_gnnconv_norm
+    postfix: true
+    config_name: discrete_sbm_pearl_gnnconv_norm_repro_exact
+    parent_run_id: rarihsee
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of pearl+normalised graph-conv Q/K/V on SBM."
+
+  # ============================================================
+  # ENZYMES panel — post-fix
+  # ============================================================
+  - run_id: 8nhefhnl
+    dataset: enzymes
+    variant: vignac
+    postfix: true
+    config_name: discrete_enzymes_vignac_repro_exact
+    parent_run_id: l1nk0622
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of vanilla DiGress on ENZYMES."
+
+  - run_id: 7yi627fv
+    dataset: enzymes
+    variant: pearl
+    postfix: true
+    config_name: discrete_enzymes_pearl_repro_exact
+    parent_run_id: ge461v1o
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of plain PEARL on ENZYMES."
+
+  - run_id: ths6e1da
+    dataset: enzymes
+    variant: pearl_spectral
+    postfix: true
+    config_name: discrete_enzymes_pearl_spectral_repro_exact
+    parent_run_id: 4n28svrj
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of pearl+spectral attention on ENZYMES."
+
+  - run_id: xsmz6yql
+    dataset: enzymes
+    variant: pearl_gnnconv_norm
+    postfix: true
+    config_name: discrete_enzymes_pearl_gnnconv_norm_repro_exact
+    parent_run_id: ly0d6lyi
+    continuation_type: post_fix_replacement
+    health: stable
+    notes: "Post-mask-fix re-launch of pearl+normalised graph-conv Q/K/V on ENZYMES."

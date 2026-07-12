@@ -1,0 +1,19 @@
+# @package _global_
+
+# Grid search W&B logger (wandb-only, no tensorboard)
+logger:
+  - wandb:
+      project: ${wandb_project}
+      name: "${model_name}_${noise_type}_lr${learning_rate}_eps${noise_level}"
+      tags: ["grid_search", "4k_params", "${model_name}", "${noise_type}", "lr_${learning_rate}", "eps_${noise_level}"]
+      group: "${model_name}_${noise_type}"
+      save_dir: ${paths.output_dir}
+      entity: ${wandb_entity}
+      log_model: false  # Don't upload models to save space
+      offline: false  # Set to true for offline mode
+      notes: "Grid search with ~4k params across architectures"
+  - csv:
+      save_dir: ${paths.output_dir}/csv
+      name: ${experiment_name}
+      version: null
+      flush_logs_every_n_steps: 100

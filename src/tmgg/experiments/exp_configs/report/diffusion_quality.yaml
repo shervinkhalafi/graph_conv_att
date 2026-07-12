@@ -1,0 +1,20 @@
+# T4: Diffusion Quality Report
+# Evaluates generative quality of diffusion models on synthetic graphs.
+defaults:
+  - /paths: default
+
+report:
+  type: diffusion_quality
+  data:
+    checkpoints: []  # Must be overridden at invocation
+    datasets: [sbm, erdos_renyi, watts_strogatz]
+  evaluation:
+    num_samples: 500
+    num_nodes: 20
+    num_steps: 100
+    mmd_kernel: gaussian_tv
+    mmd_sigma: 1.0
+    device: cuda
+    seed: 42
+  output:
+    dir: ${paths.reports}/t4_diffusion_quality

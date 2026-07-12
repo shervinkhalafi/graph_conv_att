@@ -1,0 +1,17 @@
+# @package data
+_target_: tmgg.data.GraphDataModule
+graph_type: ring_of_cliques
+graph_config:
+  # Legacy "nx_roc" preset, expressed through the current graph generator API.
+  num_nodes: 20
+  num_cliques: 4
+  clique_size: 5
+  num_graphs: 100
+
+# Data module settings
+samples_per_graph: 1000
+batch_size: 32
+num_workers: 4
+pin_memory: true
+train_ratio: 0.6
+val_ratio: 0.2

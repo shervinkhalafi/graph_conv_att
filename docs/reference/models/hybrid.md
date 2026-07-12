@@ -1,0 +1,3 @@
+# Hybrid
+
+::: tmgg.models.hybrid

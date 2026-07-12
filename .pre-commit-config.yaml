@@ -1,0 +1,35 @@
+# NOTE: This config lives in tmgg/ but .git is at parent level (monorepo).
+# The pre-commit-config.yaml must be at git root for pre-commit to find it.
+# Copy or symlink this to the parent directory, or run hooks manually:
+#   cd tmgg && uv run ruff check --fix src/
+#   cd tmgg && uv run basedpyright --project pyproject.toml
+#   cd tmgg && uv run tach check
+
+repos:
+  # Ruff - fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix, tmgg/src]
+      - id: ruff-format
+        args: [tmgg/src]
+
+  # Local hooks using shell to cd into tmgg first
+  - repo: local
+    hooks:
+      # basedpyright type checking
+      - id: basedpyright
+        name: basedpyright
+        entry: bash -c 'cd tmgg && uv run basedpyright --project pyproject.toml'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      # tach module boundary check
+      - id: tach
+        name: tach check
+        entry: bash -c 'cd tmgg && uv run tach check'
+        language: system
+        pass_filenames: false
+        always_run: true

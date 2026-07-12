@@ -1,0 +1,5 @@
+# @package hydra.launcher
+# Modal cloud execution via TmggLauncher
+_target_: tmgg.hydra_plugins.tmgg_launcher.TmggLauncher
+use_modal: true
+gpu_type: standard

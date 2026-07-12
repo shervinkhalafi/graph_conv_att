@@ -1,0 +1,56 @@
+[tools]
+python = "3.12"
+uv = "latest"
+
+[env]
+# Ensure uv uses the mise-managed Python
+UV_PYTHON_PREFERENCE = "managed"
+_ = {file = ".env"}
+
+[tasks.modal-deploy]
+description = "Deploy every TMGG Modal app (graph-denoising + graph-denoising-eval-all)"
+run = """
+# Log outside project to avoid "modified during build" error
+LOGDIR="/tmp/tmgg-modal-logs"
+TS="$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$LOGDIR"
+rm -f src/tmgg/evaluation/orca/orca
+
+# Deploy each app sequentially. Modules are listed here; add new ones as
+# additional ``-m`` lines below. Both are deployed as part of the single
+# task so a normal "redeploy after a code change" picks up every app the
+# project owns without forgetting one.
+APPS=(
+    "tmgg.modal._functions"
+    "tmgg.modal._eval_all_functions"
+)
+
+for module in "${APPS[@]}"; do
+    LOGFILE="$LOGDIR/modal-deploy-${module##*.}-${TS}.log"
+    echo "[mise modal-deploy] deploying ${module} -> ${LOGFILE}"
+    MODAL_LOGLEVEL=DEBUG uv run modal deploy -m "${module}" 2>&1 | tee "$LOGFILE"
+done
+"""
+
+[tasks.modal-serve]
+description = "Run graph-denoising in development mode (hot-reload)"
+run = "uv run modal serve -m tmgg.modal._functions"
+
+[tasks.modal-serve-eval-all]
+description = "Run graph-denoising-eval-all in development mode (hot-reload)"
+run = "uv run modal serve -m tmgg.modal._eval_all_functions"
+
+# Analysis tasks
+[tasks.aggregate-mmd]
+description = "Aggregate MMD evaluation results from Modal volume into Parquet"
+run = "uv run tmgg-modal aggregate --output results/mmd_results.parquet --cache-dir results/mmd_cache"
+
+[tasks.aggregate-mmd-dry]
+description = "Preview MMD evaluation files without downloading"
+run = "uv run tmgg-modal aggregate --dry-run"
+
+# GDPO-SBM sanity check on Modal (deployed app + client-side spawn)
+
+[tasks.train-sbm-vignac-repro]
+description = "Launch the Vignac/GDPO SBM pretraining reproduction on Modal A100 (~6-8 h bf16, ~550k steps). Parity knobs live in configs/experiment/discrete_sbm_vignac_repro.yaml."
+run = "./run-discrete-sbm-vignac-repro-modal-a100.zsh"

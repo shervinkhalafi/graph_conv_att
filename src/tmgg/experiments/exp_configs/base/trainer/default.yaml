@@ -1,0 +1,54 @@
+# PyTorch Lightning trainer configuration
+# All training configured in STEPS, not epochs
+
+_target_: pytorch_lightning.Trainer
+
+# Step-based training (no epochs)
+max_steps: 10000              # Total training steps
+max_epochs: -1                # Disable epoch-based termination
+
+# Hardware
+accelerator: "auto"
+devices: "auto"
+# bf16-mixed by default: A100 native, ~2x speedup over fp32 with no
+# loss-scaling needed (bf16 keeps fp32's exponent range). Override to
+# ``32`` for byte-exact fp32 reproduction or environments without bf16
+# tensor cores; override to ``16-mixed`` for older GPUs that need fp16.
+# See ``an internal validation harness (not included)`` for the rationale.
+precision: bf16-mixed
+
+# Checkpointing
+enable_checkpointing: true
+default_root_dir: ${paths.output_dir}
+
+# Logging
+enable_progress_bar: true  # Custom StepProgressBar replaces default
+log_every_n_steps: 50
+
+# Validation in steps (integer = steps, float = epoch fraction)
+val_check_interval: 1000      # Validate every 1000 steps
+check_val_every_n_epoch: null # Disable epoch-based validation
+
+# Early stopping and model checkpointing configured via callbacks config
+
+# Gradient clipping
+# Upstream parity (DiGress configs/train/train_default.yaml:5): clip_grad
+# defaults to null. Per-experiment configs that need clipping must opt in
+# explicitly.
+gradient_clip_val: null
+gradient_clip_algorithm: "norm"
+
+# Reproducibility
+# NOTE: deterministic=false + benchmark=true enables cuDNN autotuning,
+# which is non-deterministic. Same seed may produce slightly different
+# results across runs. For exact reproduction: trainer.deterministic=true
+# trainer.benchmark=false (at the cost of ~10-20% slower training).
+deterministic: false
+benchmark: true
+
+# Debugging options (set to true for debugging)
+fast_dev_run: false
+overfit_batches: 0
+limit_train_batches: 1.0
+limit_val_batches: 1.0
+limit_test_batches: 1.0

@@ -1,0 +1,108 @@
+# @package _global_
+# DiGress GuacaMol reproduction (Vignac et al., ICLR 2023, Table 6).
+#
+# Faithful to upstream cvignac/DiGress @ main:
+#   configs/experiment/guacamol.yaml + configs/train/train_default.yaml +
+#   configs/dataset/guacamol.yaml.
+# See ``internal notes (not included)``.
+
+defaults:
+  - /data: guacamol_digress
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_guacamol_digress_repro
+wandb_project: discrete-guacamol-digress-repro
+
+seed: 0
+
+# See QM9 yaml for the rationale behind pinning at top-level.
+learning_rate: 2e-4
+weight_decay: 1e-12
+
+trainer:
+  # Upstream guacamol.yaml: n_epochs=1000, batch_size=32.
+  # GuacaMol train ≈ 1,273,104; ⌈1.27M / 32⌉ * 1000 ≈ 39,720,000 steps.
+  # NOTE: 39.7M steps is multiple weeks of wall-clock on a single A100
+  # at current throughput. This config records the upstream-equivalent
+  # target faithfully; in practice you will want to run a fraction
+  # (e.g. 5M-10M steps via a CLI override) and report the truncation.
+  max_steps: 39720000
+  val_check_interval: 10000
+  check_val_every_n_epoch: null
+  gradient_clip_val: null
+  # See QM9 yaml for rationale.
+  precision: bf16-mixed
+
+modal_debug: false
+
+model:
+  eval_every_n_steps: 50000
+  num_nodes: 88
+  # Optimizer left at preset default (adamw + amsgrad=true). Upstream's
+  # guacamol.yaml literally says ``train.optimizer: 'adam'``, but
+  # upstream's ``DiscreteDenoisingDiffusion.configure_optimizers``
+  # (`/tmp/digress_upstream/src/diffusion_model_discrete.py:122-123`)
+  # hardcodes ``torch.optim.AdamW(..., amsgrad=True)`` and ignores
+  # ``cfg.train.optimizer`` — so upstream's yaml field is a dead
+  # setting. Matching upstream *runtime* requires keeping adamw +
+  # amsgrad=true.
+  evaluator:
+    _target_: tmgg.evaluation.molecular.MolecularEvaluator.for_guacamol
+    # Upstream guacamol.yaml::samples_to_generate=500.
+    eval_num_samples: 500
+  # Upstream guacamol.yaml overrides:
+  #   n_layers=12
+  #   hidden_dims = {dx:256, de:64, dy:128, n_head:8, dim_ffX:256,
+  #                  dim_ffE:128, dim_ffy:256}
+  #   hidden_mlp_dims = {X:256, E:128, y:256}
+  #   diffusion_steps = 500
+  #   extra_features = 'all'
+  noise_schedule:
+    timesteps: 500
+  model:
+    n_layers: 12
+    input_dims: { X: 12, E: 5, y: 0 }
+    output_dims: { X: 12, E: 5, y: 0 }
+    output_dims_x_class: 12
+    output_dims_x_feat: null
+    output_dims_e_class: 5
+    output_dims_e_feat: null
+    hidden_dims:
+      dx: 256
+      de: 64
+      dy: 128
+      n_head: 8
+      dim_ffX: 256
+      dim_ffE: 128
+      dim_ffy: 256
+    hidden_mlp_dims:
+      X: 256
+      E: 128
+      y: 256
+    # See QM9 yaml for the rationale behind composing structural
+    # (cycles + eigenfeatures) with domain (charge/valency/weight)
+    # extra-feature providers. Constants from
+    # ``upstream src/datasets/guacamol_dataset.py:218-234``: 12 atom
+    # types (C, N, O, F, B, Br, Cl, I, P, S, Se, Si), max_weight=1000.
+    # NOTE: upstream's ``atom_weights`` dict is keyed 1..12 (off-by-one)
+    # but accessed as ``list(dict.values())`` so insertion order is what
+    # matters. We pass the values list directly.
+    extra_features:
+      _target_: tmgg.models.digress.extra_molecular_features.CompositeExtraFeatures
+      providers:
+        - _target_: tmgg.models.digress.extra_features.ExtraFeatures
+          extra_features_type: all
+          max_n_nodes: ${data.num_nodes_max_static}
+        - _target_: tmgg.models.digress.extra_molecular_features.ExtraMolecularFeatures
+          valencies: [4, 3, 2, 1, 3, 1, 1, 1, 3, 2, 2, 4]
+          atom_weights: [12, 14, 16, 19, 10.81, 79.9, 35.45, 126.9, 30.97, 30.07, 78.97, 28.09]
+          max_weight: 1000
+  # GuacaMol vocab: 12 atom types + 5 bond types (no-bond + 4 bond
+  # orders). Override ``noise_process.{x,e}_classes`` away from the
+  # SBM preset default (2/2) so the empirical-marginal initialiser
+  # and forward process see the right class cardinality. See the QM9
+  # yaml for the full failure mode this guards against.
+  noise_process:
+    x_classes: 12
+    e_classes: 5

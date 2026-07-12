@@ -1,0 +1,23 @@
+# DiGress GraphTransformer with GNN projections for Q and K only
+
+defaults:
+  - digress_base
+  - _self_
+
+model:
+  n_layers: 4
+  hidden_dims:
+    dx: 128
+    de: 32
+    dy: 128
+    n_head: 4
+  projection_config:
+    use_gnn_q: true
+    use_gnn_k: true
+    use_gnn_v: false
+    gnn_num_terms: 2
+    # gnn_normalize_adj: true   # default; set false to feed raw A directly as the GSO
+  hidden_mlp_dims:
+    X: 256
+    E: 64
+    y: 256

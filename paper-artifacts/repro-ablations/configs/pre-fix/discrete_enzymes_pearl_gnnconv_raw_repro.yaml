@@ -1,0 +1,27 @@
+# @package _global_
+# DiGress ENZYMES variant — PEARL extra features + BareGraphConv
+# (RAW adjacency, non-normalized) Q/K/V projections.
+#
+# Mirror of ``discrete_sbm_pearl_gnnconv_raw_repro`` for ENZYMES.
+# Same ablation as the SBM-side: feed raw adjacency (no D^{-1/2} A
+# D^{-1/2}) to the polynomial filter. Powers of A grow with degree,
+# more overflow-prone under bf16. ENZYMES has lower max-degree than
+# PROTEINS so the raw-A pathology is less likely to surface here than
+# in the proteins variant we abandoned, but the ablation still has
+# value as a control on ``pearl_gnnconv_norm_repro``.
+
+defaults:
+  - discrete_enzymes_pearl_repro
+  - _self_
+
+experiment_name: discrete_enzymes_pearl_gnnconv_raw_repro
+wandb_project: discrete-enzymes-pearl-gnnconv-raw-repro
+
+model:
+  model:
+    projection_config:
+      use_gnn_q: true
+      use_gnn_k: true
+      use_gnn_v: true
+      gnn_normalize_adj: false
+      gnn_num_terms: 3

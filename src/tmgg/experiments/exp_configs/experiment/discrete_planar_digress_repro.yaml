@@ -1,0 +1,62 @@
+# @package _global_
+# DiGress planar reproduction (Vignac et al., ICLR 2023, Table 1).
+#
+# Layered atop ``base_config_discrete_diffusion_generative`` via the
+# Hydra experiment pattern. Targets the SPECTRE planar fixture
+# (n=64, 200 graphs).
+#
+# Invocation:
+#   tmgg-discrete-gen +experiment=discrete_planar_digress_repro
+
+defaults:
+  - /data: spectre_planar
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_planar_digress_repro
+wandb_project: discrete-planar-digress-repro
+
+seed: 666
+
+# Trainer schedule. SPECTRE planar has 128 train graphs, ~11 batches/
+# epoch at batch_size=12. We mirror SBM's 550k steps; planar tends to
+# converge earlier per the paper.
+trainer:
+  max_steps: 550000
+  val_check_interval: 5000
+  check_val_every_n_epoch: null
+  gradient_clip_val: null
+  gradient_clip_algorithm: norm
+
+model:
+  eval_every_n_steps: 75000
+  num_nodes: 64
+  model:
+    input_dims: { X: 1, E: 2, y: 0 }
+    output_dims: { X: 1, E: 2, y: 0 }
+    output_dims_x_class: 1
+    output_dims_x_feat: null
+    output_dims_e_class: 2
+    output_dims_e_feat: null
+    # Match upstream DiGress's planar recipe (Vignac et al., ICLR 2023,
+    # ``configs/experiment/planar.yaml``): activate ``extra_features='all'``
+    # so cycle features (``input_dims.X += 6``) and eigenvalue features
+    # (``input_dims.y += 11``) are appended at the model boundary. Without
+    # this, the model preset's ``mlp_in_X = Linear(1, 128)`` would receive
+    # an X tensor of width 2 (the noise process's default x_classes=2 from
+    # ``discrete_sbm_official``) and crash with a matmul shape mismatch.
+    extra_features:
+      _target_: tmgg.models.digress.extra_features.ExtraFeatures
+      extra_features_type: all
+      max_n_nodes: ${data.num_nodes_max_static}
+  # K=1 abstract-node convention (single class, no "no-node" slot). The
+  # planar yaml overrides ``model.input_dims.X=1`` and
+  # ``output_dims_x_class=1`` but the inherited ``discrete_sbm_official``
+  # model preset leaves ``noise_process.x_classes=2``. The init-time
+  # invariant in ``DiffusionModule`` would normally catch this drift, but
+  # Modal launches strip ``assert`` via ``PYTHONOPTIMIZE=1`` (see
+  # ``_run_cli_impl``), so the mismatch only surfaced as a Linear-layer
+  # matmul crash. Mirror SBM-vignac's noise_process block.
+  noise_process:
+    x_classes: 1
+    e_classes: 2

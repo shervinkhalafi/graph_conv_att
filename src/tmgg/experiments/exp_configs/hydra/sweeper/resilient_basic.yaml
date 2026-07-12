@@ -1,0 +1,6 @@
+# @package hydra.sweeper
+# Multirun sweeper: same Cartesian product as Hydra's `basic`, but one failed job
+# does not abort the rest of the sweep (failures are logged with tracebacks).
+_target_: tmgg.hydra_plugins.tmgg_sweeper.resilient_basic_sweeper.ResilientBasicSweeper
+max_batch_size: null
+params: {}

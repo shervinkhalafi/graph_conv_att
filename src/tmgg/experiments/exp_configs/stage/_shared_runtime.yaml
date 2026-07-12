@@ -1,0 +1,17 @@
+# @package _global_
+# Shared executable settings for future validation stages.
+#
+# Stage 3-5 intentionally reuse the same training runtime so comparisons stay
+# focused on dataset scope and study design rather than optimizer drift.
+
+learning_rate: 1e-2
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+scheduler_config:
+  type: none
+
+# Default noise levels remain stage-local sweep inputs, but the actual values
+# are shared across the future-stage configs.
+noise_levels: [0.1]
+eval_noise_levels: [0.1]

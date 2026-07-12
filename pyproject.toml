@@ -1,0 +1,208 @@
+[project]
+name = "tmgg"
+version = "0.1.0"
+description = "Graph denoising experiments with Hydra and PyTorch Lightning"
+authors = [{ name = "Igor Krawczuk", email = "igor@krawczuk.eu" }]
+requires-python = ">=3.11,<3.13"
+readme = "README.md"
+dependencies = [
+  "torch>=1.12.0",
+  "pytorch-lightning>=2.0.0",
+  "hydra-core>=1.3.0",
+  "omegaconf>=2.3.0",
+  "numpy>=1.21.0",
+  "scipy>=1.7.0",
+  "matplotlib>=3.5.0",
+  "wandb>=0.20.1",
+  "tqdm>=4.64.0",
+  "rich>=13.0.0",
+  "networkx>=3.5",
+  "loguru>=0.7.3",
+  "click>=8.0.0",
+  "pandas>=2.0.0",
+  "seaborn>=0.13.2",
+  "torch-geometric>=2.5.0",  # PyG for benchmark datasets (QM9, ENZYMES, etc.)
+  "modal>=0.64.0",           # Modal cloud execution (required for ModalRunner)
+  "safetensors>=0.4.0",      # Fast tensor serialization for eigenstructure study
+  "polars>=1.0.0",           # Used by tmgg-modal aggregate
+  "pot>=0.9.0",              # Python Optimal Transport (EMD kernel for MMD metrics)
+  "rdkit>=2024.3",
+  "fcd>=1.2.2",
+  # We deliberately do NOT depend on ``moses`` / ``molsets`` /
+  # ``guacamol``. The former two are documented in
+  # ``tmgg.evaluation.molecular.moses_metrics``: the PyPI ``moses`` is
+  # an empty name-squat and ``molsets`` (the real MOSES package) fails
+  # to import on the current toolchain (``rdkit.six`` removal,
+  # ``pandas.DataFrame.append`` removal, ``np.NaN`` removal, deprecated
+  # Morgan API segfaulting) and depends transitively on the no-longer-
+  # buildable ``pomegranate==0.12.0``. ``guacamol==0.5.2`` does
+  # ``from scipy import histogram`` at chemistry.py:10 (removed in
+  # scipy 1.0) and pulls ``tensorflow==2.20.0`` which conflicts with
+  # PyTorch's CUDA 13 wheel stack. Both are vendored at:
+  #   src/tmgg/evaluation/molecular/moses_metrics.py
+  #   src/tmgg/evaluation/molecular/guacamol_metrics.py
+  # The data layer fetches the canonical MOSES CSVs from the
+  # molecularsets GitHub LFS mirror; see
+  # ``src/tmgg/data/datasets/molecular/moses.py``.
+]
+license = "EUPL-1.2"
+license-files = ["LICENSE"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+ray = ["ray[default]>=2.10.0"]  # Optional: local distributed execution with Ray
+notebook = ["jupyter>=1.1.1", "torchshow>=0.5.2"]
+docs = ["pymdown-extensions", "pygments", "mkdocstrings-python"]
+analysis = [
+    # graph-tool: install via conda-forge (not pip-installable)
+    #   conda install -c conda-forge graph-tool
+    # ORCA: compile from source in src/tmgg/evaluation/orca/
+    #   cd src/tmgg/evaluation/orca && g++ -O2 -std=c++11 -o orca orca.cpp
+]
+
+[project.scripts]
+# Denoising experiment CLIs
+tmgg-digress = "tmgg.experiments.digress_denoising.runner:main"
+tmgg-mod-attention = "tmgg.experiments.mod_attention_denoising.runner:main"
+tmgg-gnn = "tmgg.experiments.gnn_denoising.runner:main"
+tmgg-gnn-transformer = "tmgg.experiments.gnn_transformer_denoising.runner:main"
+tmgg-spectral-arch = "tmgg.experiments.spectral_arch_denoising.runner:main"
+tmgg-baseline = "tmgg.experiments.lin_mlp_baseline_denoising.runner:main"
+# Generative experiment CLIs
+tmgg-gaussian-gen = "tmgg.experiments.gaussian_diffusion_generative.runner:main"
+tmgg-discrete-gen = "tmgg.experiments.discrete_diffusion_generative.runner:main"
+tmgg-discrete-eval = "tmgg.experiments.discrete_diffusion_generative.evaluate_cli:main"
+tmgg-discrete-eval-all = "tmgg.experiments.discrete_diffusion_generative.evaluate_all_cli:main"
+# Unified experiment runner (replaces tmgg-stage1..5)
+# Usage: tmgg-experiment +stage=stage1_poc
+tmgg-experiment = "tmgg.experiments.stages.runner:main"
+tmgg-grid-search = "tmgg.experiments.grid_search_runner:main"
+# Export tools (now separate workspace member: internal export tooling)
+# Eigenstructure study CLI
+tmgg-eigenstructure = "tmgg.experiments.eigenstructure_study.cli:main"
+# Eigenstructure study Hydra entry point
+tmgg-eigenstructure-exp = "tmgg.experiments.eigenstructure_study.runner:main"
+# Embedding dimension study CLI
+tmgg-embedding-study = "tmgg.experiments.embedding_study.cli:main"
+# Embedding dimension study Hydra entry point
+tmgg-embedding-study-exp = "tmgg.experiments.embedding_study.runner:main"
+# Modal cloud orchestration CLI
+tmgg-modal = "tmgg.modal.cli:main"
+# Experiment scaffold (dev tool)
+tmgg-scaffold = "tmgg.experiments.scaffold:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tmgg"]
+
+# Include YAML config files in the wheel for Modal/cloud deployments
+[tool.hatch.build.targets.wheel.force-include]
+"src/tmgg/experiments/exp_configs" = "tmgg/experiments/exp_configs"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/tmgg/**/*.py", "src/tmgg/**/*.yaml", "src/tmgg/**/*.yml"]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.31.1",
+    "cookiecutter>=2.6.0",
+    "hypothesis>=6.0.0",
+    "pdbpp>=0.11.6",
+    "pre-commit>=4.0.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    # Typing stubs for RDKit. Without these basedpyright reports
+    # ``"Chem" is unknown import symbol`` for every ``from rdkit import
+    # Chem`` site under ``src/tmgg/data/datasets/molecular`` and
+    # ``src/tmgg/evaluation/molecular``. These were transitively
+    # available via ``molecule-benchmarks`` during a prior consolidation
+    # spike, masking the missing dev-dep declaration; declaring it here
+    # makes the resolution explicit. The stubs themselves still have
+    # internal bugs (wrong signatures for ``HasSubstructMatch``,
+    # ``BulkTanimotoSimilarity``, ``MolToSmiles``); those need a
+    # separate pin or upstream fix.
+    "rdkit-stubs>=0.8",
+    "ruff>=0.8.0",
+    "tach>=0.32.2",
+    "tomlkit>=0.13.0",
+]
+
+[tool.coverage.run]
+# Only trace our source code, not dependencies
+source = ["src/tmgg"]
+omit = [
+    "**/tests/*",
+    "**/__pycache__/*",
+]
+# NOTE: Use `uv run coverage run -m pytest` instead of `pytest --cov`
+# due to conflict between pytest-cov's subprocess hooks and PyTorch.
+# See: https://github.com/nedbat/coveragepy/issues/1573
+
+[tool.coverage.report]
+# Don't complain about missing coverage on these patterns
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]
+# Skip files with 100% coverage in terminal report
+skip_covered = true
+
+[tool.ruff]
+src = ["src"]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tmgg"]
+
+[tool.basedpyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["src/tmgg", "tests"]
+exclude = [
+    "**/__pycache__",
+    "**/typings",
+    "tests/archived",
+    "src/tmgg/experiments/_scaffold",
+    # tests/modal/ runs inside the Modal image and intentionally imports
+    # packages that are not installed on the host (e.g. ``moses`` /
+    # ``guacamol``); skip pyright resolution here to avoid host-side
+    # false positives. The Modal-side CI runs these directly.
+    "tests/modal",
+    # paper-artifacts/ scripts are uv-self-contained PEP-723 inline-deps
+    # scripts (pandas, wandb, pyyaml, requests are not in the project's
+    # main pyproject deps), so pyright cannot resolve their imports
+    # against the project venv. Skip them here.
+    "paper-artifacts/**",
+]
+# Point pyright at the uv-managed venv so ad-hoc scripts outside `include`
+# (e.g. analysis/**) can still resolve project deps when the pre-commit hook
+# or the live harness scans them on edit.
+venvPath = "."
+venv = ".venv"
+extraPaths = [".", "paper-artifacts/repro-ablations/scripts"]
+reportMissingImports = true
+reportMissingTypeStubs = false  # Don't complain about missing stubs for torch etc.
+reportConstantRedefinition = false  # Allow uppercase tensor vars (X, E, Q, K, V) to be reassigned

@@ -1,0 +1,73 @@
+# Base configuration for discrete diffusion graph generation experiments
+#
+# Inherits shared training infrastructure from _base_infra.yaml directly,
+# skipping the denoising task config (task/denoising.yaml).
+#
+# The model architecture comes from a model config in models/discrete/.
+# The ``/models/discrete@model`` defaults entry uses the group/option
+# split form so an override fully replaces the default tree instead of
+# deep-merging on top. This matters for panel yamls where the new
+# architecture has a different kwargs signature than
+# ``discrete_default``'s GraphTransformer (``n_layers``, ``input_dims``
+# etc. would otherwise bleed through and crash ``hydra.utils.instantiate``).
+#
+# Usage (pick one architecture per run):
+#   tmgg-discrete-gen models/discrete@model=discrete_sbm_official
+#   tmgg-discrete-gen models/discrete@model=baselines/linear
+#
+# Override: tmgg-discrete-gen model.noise_schedule.timesteps=50 data.num_nodes=20
+
+defaults:
+  - _base_infra
+  - /models/discrete@model: discrete_default
+  - override /base/logger: discrete_wandb
+  - override /base/callbacks: discrete_nll_with_async_eval
+  - _self_
+
+experiment_name: "discrete_diffusion"
+wandb_project: discrete-diffusion
+_cli_cmd: tmgg-discrete-gen
+
+# Extra features: uncomment to enable structural augmentation.
+# When enabled, adjust model.model.input_dims to account for extra
+# feature widths (use extra_features_dims() to compute offsets):
+#   cycles:      input_dims.X += 3, input_dims.y += 5
+#   eigenvalues: input_dims.X += 3, input_dims.y += 11
+#   all:         input_dims.X += 6, input_dims.y += 11
+
+# --- Evaluation metrics ---
+# Informational only at present. The training loop logs every non-None metric
+# returned by GraphEvaluator; this list is not consumed programmatically.
+eval_metrics: [degree, clustering, spectre]
+
+# --- Data ---
+
+data:
+  _target_: tmgg.data.data_modules.synthetic_categorical.SyntheticCategoricalDataModule
+  graph_type: sbm
+  num_nodes: 20
+  num_graphs: 2000
+  train_ratio: 0.8
+  val_ratio: 0.1
+  batch_size: 32
+  num_workers: ${num_workers}
+  prefetch_factor: ${prefetch_factor}
+  seed: ${seed}
+  graph_config:
+    num_blocks: 2
+    p_intra: 0.7
+    p_inter: 0.1
+  # Evaluator pulls SBM parameters from this block via Hydra
+  # interpolation (see ``models/discrete/discrete_sbm_official.yaml``).
+  # Tracks ``graph_config`` automatically.
+  eval_meta:
+    p_intra: ${data.graph_config.p_intra}
+    p_inter: ${data.graph_config.p_inter}
+
+# --- Output directories ---
+
+hydra:
+  run:
+    dir: outputs/discrete_diffusion/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: outputs/discrete_diffusion/sweeps/${now:%Y-%m-%d}/${now:%H-%M-%S}

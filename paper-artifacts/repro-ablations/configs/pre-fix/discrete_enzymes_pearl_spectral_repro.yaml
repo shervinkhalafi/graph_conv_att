@@ -1,0 +1,26 @@
+# @package _global_
+# DiGress ENZYMES variant — PEARL extra features + spectral
+# attention projections.
+#
+# Mirror of ``discrete_sbm_pearl_spectral_repro`` for ENZYMES. Stacks
+# the R-PEARL ``ExtraFeatures`` swap with :class:`SpectralProjectionLayer`
+# Q/K/V (mirroring ``digress_transformer_spectral_all.yaml``). Run
+# alongside ``pearl_repro`` to test whether the spectral attention
+# signal is worth its cost on biological structure.
+
+defaults:
+  - discrete_enzymes_pearl_repro
+  - _self_
+
+experiment_name: discrete_enzymes_pearl_spectral_repro
+wandb_project: discrete-enzymes-pearl-spectral-repro
+
+model:
+  model:
+    projection_config:
+      use_spectral_q: true
+      use_spectral_k: true
+      use_spectral_v: true
+      spectral_k: 16
+      spectral_num_terms: 3
+      spectral_normalize_eigenvalues: true

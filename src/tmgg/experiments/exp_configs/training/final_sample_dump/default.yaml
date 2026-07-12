@@ -1,0 +1,14 @@
+# @package training.final_sample_dump
+# Final-sample dump at fit-end (parity #46 / D-16b). Mirrors upstream
+# DiGress's `final_model_samples_to_generate > 0` gate: leaving
+# num_samples at 0 disables the callback. Wave configs that want to
+# emit a final sample bundle should compose this default via:
+#
+#   defaults:
+#     - training/final_sample_dump@training.final_sample_dump: default
+#
+# and override num_samples / sample_batch_size / save_path as needed.
+num_samples: 0  # 0 disables; matches upstream gate
+save_path: null  # null = ${run_dir}/final_samples.pt locally,
+                 # ${OUTPUTS_MOUNT}/final_samples/{run_name}.pt on Modal
+sample_batch_size: 64

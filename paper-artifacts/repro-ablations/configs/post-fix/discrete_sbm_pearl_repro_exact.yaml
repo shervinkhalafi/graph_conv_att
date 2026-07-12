@@ -1,0 +1,33 @@
+# @package _global_
+# DiGress SBM — PEARL extra features, post-fix exact.
+# ===================================================
+#
+# Mirrors ``discrete_sbm_pearl_repro`` but inherits the four upstream-
+# parity deltas from ``discrete_sbm_vignac_repro_exact``:
+# ``dim_ffy=2048``, ``amsgrad=false``, ``seed=0``,
+# ``use_upstream_hidden_edge_diagonal=true``.
+#
+# Replaces the ``ExtraFeatures`` block (cycle counts + Laplacian
+# eigenvalue features) with R-PEARL via :class:`PEARLExtraFeatures`.
+# Runs the ablation against ``discrete_sbm_vignac_repro_exact`` cleanly
+# under post-fix architecture: identical training pipeline minus the
+# spectral feature path.
+
+defaults:
+  - discrete_sbm_vignac_repro_exact
+  - _self_
+
+experiment_name: discrete_sbm_pearl_repro_exact
+wandb_project: discrete-sbm-pearl-repro-exact
+
+model:
+  model:
+    extra_features:
+      _target_: tmgg.models.digress.pearl_extra_features.PEARLExtraFeatures
+      max_n_nodes: ${data.num_nodes_max_static}
+      pearl_output_dim: 16
+      pearl_num_layers: 3
+      pearl_mode: random
+      pearl_hidden_dim: 64
+      pearl_input_samples: 32
+      pearl_max_nodes: ${data.num_nodes_max_static}

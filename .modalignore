@@ -1,0 +1,76 @@
+# Virtual environment - dependencies installed via uv_pip_install
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Git
+.git/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs and outputs - not needed in container
+logs/
+outputs/
+wandb/
+wandb_export/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Test artifacts
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+.tox/
+
+# Cache directories
+.cache/
+cache/
+.ruff_cache/
+
+# Tool data
+.naider/
+.aider*
+.claude/
+.codex/
+.local-storage/
+
+# Results and data (large directories)
+configs/
+data/
+checkpoints/
+storage/
+reports/
+analysis_output/
+eigenstructure_results/
+eigenstructure_results_full/
+
+# Review/docs artifacts
+2025-*/
+docs/
+docs/reports/
+internal design notes (not included)
+scripts/
+tests/
+rationales/
+
+# Local helper scripts that should not invalidate Modal packaging
+DEBUG-run-*.zsh
+run-*.zsh
+sync_wb/
+tensorboard-tools/
+internal export tooling
+
+# Misc
+.DS_Store
+*.log
+.env
+.mcp.json

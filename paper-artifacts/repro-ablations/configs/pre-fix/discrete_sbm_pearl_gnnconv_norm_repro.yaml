@@ -1,0 +1,29 @@
+# @package _global_
+# DiGress SBM repro variant — PEARL extra features + BareGraphConv
+# (normalized adjacency) Q/K/V projections.
+#
+# Stacks the R-PEARL ``ExtraFeatures`` swap with spatial polynomial-in-A
+# attention projections. Counterpart to ``discrete_sbm_pearl_spectral_repro``
+# but using the spatial filter bank rather than the spectral one. With
+# ``gnn_normalize_adj=true`` the polynomial uses the symmetrically
+# normalized adjacency; the eigenbasis (V, Λ) of A_norm could in
+# principle express the same Y = V W with W = diag(p(λ)). PEARL features
+# are not literally V — so the equivalence is loose, but the expressive
+# class includes "polynomial in spectrum", which is what the spectral
+# variant computes explicitly.
+
+defaults:
+  - discrete_sbm_pearl_repro
+  - _self_
+
+experiment_name: discrete_sbm_pearl_gnnconv_norm_repro
+wandb_project: discrete-sbm-pearl-gnnconv-norm-repro
+
+model:
+  model:
+    projection_config:
+      use_gnn_q: true
+      use_gnn_k: true
+      use_gnn_v: true
+      gnn_normalize_adj: true     # symmetrically normalized adjacency
+      gnn_num_terms: 3            # polynomial order, mirrors spectral_num_terms=3

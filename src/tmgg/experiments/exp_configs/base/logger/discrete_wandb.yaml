@@ -1,0 +1,26 @@
+# @package _global_
+
+logger:
+  - wandb:
+      project: ${wandb_project}
+      # Use ``run_id`` directly so concurrent runs of the same
+      # experiment (notably under ``force_fresh=true`` which appends a
+      # ``_fresh_<UTC>`` suffix in ``generate_run_id``) get distinct
+      # wandb display names. Previously the template hardcoded
+      # ``${experiment_name}_T${...}_n${...}_${graph_type}`` and every
+      # run with identical hyperparams collided in the wandb UI under
+      # the same name (different internal run IDs), making it
+      # impossible to tell which run was which without opening each
+      # one. ``run_id`` already encodes experiment + model + lr + wd +
+      # seed (+ optional fresh-timestamp), so it is the right unique
+      # display key.
+      name: ${run_id}
+      tags: []
+      save_dir: ${paths.output_dir}
+      entity: ${wandb_entity}
+      log_model: false
+  - csv:
+      save_dir: ${paths.output_dir}/csv
+      name: ${experiment_name}
+      version: null
+      flush_logs_every_n_steps: 100

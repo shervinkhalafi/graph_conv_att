@@ -1,0 +1,42 @@
+# @package _global_
+# DiGress SBM repro variant — Vignac extra features (``all``) + spectral
+# attention projections.
+#
+# Stacks the existing ``digress_transformer_spectral_all.yaml`` pattern of
+# using :class:`SpectralProjectionLayer` for Q/K/V on top of the faithful
+# Vignac/GDPO SBM-pretraining recipe (``discrete_sbm_vignac_repro``).
+# Two positional-encoding mechanisms run in concert:
+#
+# 1. **Vignac ``extra_features='all'``**: cycle counts and Laplacian
+#    eigenvalue features concatenated into the node/global input
+#    streams. Inherited unchanged from the vignac repro overlay.
+# 2. **Spectral attention projections**: Q/K/V computed via
+#    ``SpectralProjectionLayer``, which recomputes the Laplacian
+#    eigendecomposition of the noised adjacency at every step. The
+#    extra cost is the model's choice — this variant tests whether
+#    spectral attention is additive to Vignac's hand-crafted spectral
+#    extra features.
+#
+# Use this overlay as the Vignac-side counterpart to
+# ``discrete_sbm_pearl_spectral_repro``: same spectral-attention swap,
+# different extra-features baseline.
+
+defaults:
+  - discrete_sbm_vignac_repro
+  - _self_
+
+experiment_name: discrete_sbm_vignac_spectral_repro
+wandb_project: discrete-sbm-vignac-spectral-repro
+
+model:
+  model:
+    # Switch attention Q/K/V from ``Linear`` to ``SpectralProjectionLayer``.
+    # Mirrors ``models/digress/digress_transformer_spectral_all.yaml`` and
+    # ``discrete_sbm_pearl_spectral_repro``.
+    projection_config:
+      use_spectral_q: true
+      use_spectral_k: true
+      use_spectral_v: true
+      spectral_k: 16            # number of eigenpairs used per projection
+      spectral_num_terms: 3     # polynomial expansion order
+      spectral_normalize_eigenvalues: true

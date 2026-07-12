@@ -1,0 +1,40 @@
+# @package _global_
+# Stage 1 Sanity Check: Constant Noise Memorization
+#
+# Tests whether models can memorize a fixed noisy→clean mapping.
+# Expected: ~99% accuracy after training (if architecture works).
+#
+# This is a debugging/validation stage, not a benchmark. It verifies:
+# 1. Model has sufficient capacity to represent the mapping
+# 2. Gradient flow works correctly through all layers
+# 3. Optimizer can update weights in the right direction
+#
+# If this fails, something fundamental is broken.
+
+defaults:
+  - override /data: sbm_default
+
+# Stage identifier
+stage: stage1_sanity
+
+# Fixed noise mode: same noisy input every training step
+fixed_noise_seed: 42
+
+# Single noise level (no random sampling needed for memorization test)
+noise_levels: [0.1]
+eval_noise_levels: [0.1]
+
+# Optimizer settings (harmonized across all stages)
+learning_rate: 1e-2
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+
+# Disable LR scheduling for simpler optimization
+scheduler_config:
+  type: none
+
+# Full spectrum for n=50 graph
+model:
+  model:
+    k: 50

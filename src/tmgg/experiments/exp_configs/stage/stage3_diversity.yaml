@@ -1,0 +1,20 @@
+# @package _global_
+# Stage 3: Dataset Diversity
+#
+# Budget: 400 GPU-hours (future work, beyond 200h budget)
+# Goal: Validate across all graph families
+#
+# Uses same optimizer settings as stage1_poc for fair comparison
+
+defaults:
+  - _shared_runtime
+  - override /data: sbm_single_graph
+  - _self_
+
+# Stage identifier
+stage: stage3_diversity
+
+# Model settings
+model:
+  model:
+    k: 50

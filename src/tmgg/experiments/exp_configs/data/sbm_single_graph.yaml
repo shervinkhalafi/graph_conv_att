@@ -1,0 +1,13 @@
+# @package data
+# Single-graph protocol for Stochastic Block Model (SBM) graphs
+
+defaults:
+  - single_graph_base
+
+graph_type: sbm
+num_nodes: 50
+
+graph_config:
+  p_intra: 0.7   # Edge probability within blocks
+  p_inter: 0.05  # Edge probability between blocks
+  num_blocks: 3

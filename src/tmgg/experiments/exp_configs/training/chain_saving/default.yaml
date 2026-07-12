@@ -1,0 +1,22 @@
+# @package training.chain_saving
+# Reverse-chain snapshot recording (parity #46 / D-16a). Mirrors upstream
+# DiGress's `number_chain_steps > 0` gate: leaving num_chains_to_save at 0
+# disables the callback. Wave configs that want to capture chains should
+# compose this default via:
+#
+#   defaults:
+#     - training/chain_saving@training.chain_saving: default
+#
+# and override num_chains_to_save / snapshot_step_interval / etc. as needed.
+#
+# Cadence semantics (D-16a Resolutions Q2):
+# * chain_save_every_n_val gates the validation-pass cadence
+#   (every Nth validation pass writes a snapshot artefact).
+# * chain_save_at_fit_end fires an extra dedicated pass at fit-end
+#   independent of the validation cadence.
+num_chains_to_save: 0  # 0 disables; matches upstream gate
+snapshot_step_interval: 50  # reverse-loop step cadence inside a single chain
+chain_save_every_n_val: 20  # validation-pass cadence
+chain_save_at_fit_end: true  # extra pass at fit-end
+chain_save_path: null  # null = ${run_dir}/chains/ locally,
+                      # ${OUTPUTS_MOUNT}/chains/{run_name}/ on Modal

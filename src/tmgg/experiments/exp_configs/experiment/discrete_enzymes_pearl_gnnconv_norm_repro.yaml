@@ -1,0 +1,26 @@
+# @package _global_
+# DiGress ENZYMES variant — PEARL extra features + BareGraphConv
+# (normalized adjacency) Q/K/V projections.
+#
+# Mirror of ``discrete_sbm_pearl_gnnconv_norm_repro`` for ENZYMES.
+# Stacks R-PEARL with spatial polynomial-in-A_norm attention
+# projections (D^{-1/2} A D^{-1/2}). Counterpart to the spectral
+# variant but using the spatial filter bank rather than the spectral
+# one — same expressive class (polynomial in spectrum) but no eigh
+# during attention.
+
+defaults:
+  - discrete_enzymes_pearl_repro
+  - _self_
+
+experiment_name: discrete_enzymes_pearl_gnnconv_norm_repro
+wandb_project: discrete-enzymes-pearl-gnnconv-norm-repro
+
+model:
+  model:
+    projection_config:
+      use_gnn_q: true
+      use_gnn_k: true
+      use_gnn_v: true
+      gnn_normalize_adj: true
+      gnn_num_terms: 3

@@ -1,0 +1,45 @@
+# @package data
+# SPECTRE SBM fixture configuration
+#
+# Loads the 200-graph SPECTRE SBM fixture used by upstream DiGress
+# (Martinkus et al., NeurIPS 2022; Vignac et al., ICLR 2023). Splits
+# match upstream exactly: 128 train / 32 val / 40 test via
+# ``torch.randperm(200, seed=0)``. Variable node counts in [44, 187],
+# 2-5 communities, ``p_intra ≈ 0.3``, ``p_inter ≈ 0.005``.
+#
+# Use in experiments via:
+#   tmgg-discrete-gen +data=spectre_sbm
+
+defaults:
+  - _self_
+
+_target_: tmgg.data.data_modules.spectre_sbm.SpectreSBMDataModule
+
+batch_size: 12            # Upstream DiGress SBM batch size
+num_workers: ${num_workers}
+pin_memory: true
+prefetch_factor: ${prefetch_factor}
+seed: ${seed}
+
+# Optional: pre-downloaded fixture path. When null the datamodule
+# downloads on first setup() call to ``~/.cache/tmgg/spectre/sbm_200.pt``.
+# Override at the CLI (``data.fixture_path=/data/spectre/sbm_200.pt``)
+# when running inside a Modal container whose volume already holds the
+# file.
+fixture_path: null
+cache_dir: null
+
+# Safe upper bound on node count across the SPECTRE SBM fixture.
+# Variable node counts in [44, 187]; rounded up to 200 so the same
+# value comfortably covers any future re-sampling. Exposed for Hydra
+# interpolation by model configs that need ``max_n_nodes`` (e.g.
+# ``model.extra_features.max_n_nodes``). See parity audit D-11 / #42.
+num_nodes_max_static: 200
+
+# Informational metadata consumed by the evaluator via Hydra
+# interpolation. These are the SBM parameters the SPECTRE fixture was
+# generated with; matching them makes the Wald-test denominator
+# well-defined.
+eval_meta:
+  p_intra: 0.3
+  p_inter: 0.005

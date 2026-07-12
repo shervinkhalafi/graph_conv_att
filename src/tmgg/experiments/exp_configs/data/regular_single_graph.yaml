@@ -1,0 +1,11 @@
+# @package data
+# Single-graph protocol for d-regular graphs
+
+defaults:
+  - single_graph_base
+
+graph_type: regular
+num_nodes: 50
+
+graph_config:
+  d: 3  # Degree (each node has exactly d neighbors)

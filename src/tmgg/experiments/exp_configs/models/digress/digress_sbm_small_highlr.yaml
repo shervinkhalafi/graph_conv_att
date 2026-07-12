@@ -1,0 +1,30 @@
+# Small DiGress model with high learning rate (matching spectral models)
+#
+# Same architecture as digress_sbm_small but with LR=1e-2 to compare
+# against spectral models using the same optimizer settings.
+
+defaults:
+  - digress_base
+  - _self_
+
+model:
+  n_layers: 4
+  hidden_dims:
+    dx: 128
+    de: 32
+    dy: 32
+    n_head: 4
+    dim_ffX: 128
+    dim_ffE: 32
+    dim_ffy: 128
+  hidden_mlp_dims:
+    X: 64
+    E: 32
+    y: 64
+
+# High LR settings (matching spectral models in stage 1)
+learning_rate: 1e-2
+weight_decay: 0.0
+optimizer_type: adam
+amsgrad: false
+loss_type: "bce_logits"

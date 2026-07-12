@@ -1,0 +1,99 @@
+# @package _global_
+# DiGress MOSES reproduction (Vignac et al., ICLR 2023, Table 5).
+#
+# Faithful to upstream cvignac/DiGress @ main:
+#   configs/experiment/moses.yaml + configs/train/train_default.yaml +
+#   configs/dataset/moses.yaml.
+# See ``internal notes (not included)``.
+
+defaults:
+  - /data: moses_digress
+  - override /models/discrete@model: discrete_sbm_official
+  - _self_
+
+experiment_name: discrete_moses_digress_repro
+wandb_project: discrete-moses-digress-repro
+
+seed: 0
+
+# See QM9 yaml for the rationale behind pinning these at the
+# top-level: makes the run name reflect the actual optimizer config
+# instead of inheriting spectral-arch defaults from _base_infra.yaml.
+learning_rate: 2e-4
+weight_decay: 1e-12
+
+trainer:
+  # Upstream moses.yaml: n_epochs=300, batch_size=256.
+  # MOSES train ≈ 1,584,663; ⌈1.58M / 256⌉ * 300 ≈ 1,853,000 steps.
+  # NOTE: 1.85M steps at our current single-A100 throughput is on the
+  # order of multiple days of wall-clock; faithful upstream parity
+  # requires either multi-GPU or a longer Modal budget.
+  max_steps: 1853000
+  val_check_interval: 5000
+  check_val_every_n_epoch: null
+  gradient_clip_val: null
+  # See QM9 yaml for rationale (pin so launcher overrides are
+  # identity-redundant).
+  precision: bf16-mixed
+
+modal_debug: false
+
+model:
+  eval_every_n_steps: 25000
+  num_nodes: 30
+  evaluator:
+    _target_: tmgg.evaluation.molecular.MolecularEvaluator.for_moses
+    # Upstream moses.yaml::samples_to_generate=256.
+    eval_num_samples: 256
+  # Upstream moses.yaml overrides:
+  #   n_layers=12
+  #   hidden_dims = {dx:256, de:64, dy:128, n_head:8, dim_ffX:256,
+  #                  dim_ffE:128, dim_ffy:256}
+  #   hidden_mlp_dims = {X:256, E:128, y:256}
+  #   diffusion_steps = 500
+  #   extra_features = 'all'
+  noise_schedule:
+    timesteps: 500
+  model:
+    n_layers: 12
+    input_dims: { X: 8, E: 5, y: 0 }
+    output_dims: { X: 8, E: 5, y: 0 }
+    output_dims_x_class: 8
+    output_dims_x_feat: null
+    output_dims_e_class: 5
+    output_dims_e_feat: null
+    hidden_dims:
+      dx: 256
+      de: 64
+      dy: 128
+      n_head: 8
+      dim_ffX: 256
+      dim_ffE: 128
+      dim_ffy: 256
+    hidden_mlp_dims:
+      X: 256
+      E: 128
+      y: 256
+    # See QM9 yaml for the rationale behind composing structural
+    # (cycles + eigenfeatures) with domain (charge/valency/weight)
+    # extra-feature providers. Constants from
+    # ``upstream src/datasets/moses_dataset.py:189-194``: 8 atom types
+    # (C, N, S, O, F, Cl, Br, H), max_weight=350.
+    extra_features:
+      _target_: tmgg.models.digress.extra_molecular_features.CompositeExtraFeatures
+      providers:
+        - _target_: tmgg.models.digress.extra_features.ExtraFeatures
+          extra_features_type: all
+          max_n_nodes: ${data.num_nodes_max_static}
+        - _target_: tmgg.models.digress.extra_molecular_features.ExtraMolecularFeatures
+          valencies: [4, 3, 4, 2, 1, 1, 1, 1]      # C, N, S, O, F, Cl, Br, H
+          atom_weights: [12, 14, 32, 16, 19, 35.4, 79.9, 1]
+          max_weight: 350
+  # MOSES vocab: 8 atom types + 5 bond types (no-bond + 4 bond orders).
+  # Override ``noise_process.{x,e}_classes`` away from the SBM preset
+  # default (2/2) so the empirical-marginal initialiser and forward
+  # process see the right class cardinality. See the QM9 yaml for the
+  # full failure mode this guards against.
+  noise_process:
+    x_classes: 8
+    e_classes: 5

@@ -1,0 +1,108 @@
+# Tach module boundary configuration
+# Goal: Protect infrastructure from accidental LLM edits while allowing
+# rapid research iteration on models/experiments
+
+exclude = [
+    "**/__pycache__",
+    "**/*egg-info",
+    "**/docs",
+    "**/tests",
+    "**/venv",
+    "**/.venv",
+]
+
+source_roots = ["src"]
+
+# ============================================================
+# INFRASTRUCTURE MODULES (protected, explicit dependencies)
+# ============================================================
+
+[[modules]]
+path = "tmgg.data"
+depends_on = ["tmgg.utils.noising"]
+# Data loading - data_modules use SizeDistribution from utils.noising
+
+[[modules]]
+path = "tmgg.modal"
+depends_on = [
+    "tmgg.training.orchestration",  # Uses run_experiment, generate_run_id
+    "tmgg.experiments",             # Evaluation function uses datamodule and checkpoint utils
+    "tmgg.data",                    # Dataset prepare/validate functions orchestrate dataset classes + SPECTRE fixture loaders
+    "tmgg.evaluation",              # graph-denoising-mmd-baselines app calls compute_baseline + save_baseline
+]
+# Modal platform integration - depends on cloud abstraction and run_experiment
+
+# ============================================================
+# SHARED UTILITIES (semi-protected)
+# ============================================================
+
+[[modules]]
+path = "tmgg.utils.spectral"
+depends_on = []
+# Pure linear algebra — no framework deps
+
+[[modules]]
+path = "tmgg.utils.noising"
+depends_on = []
+# Noise generators and size distribution — pure torch/numpy, no tmgg dependencies
+
+[[modules]]
+path = "tmgg.evaluation"
+depends_on = [
+    "tmgg.data",
+]
+# Graph evaluation metrics (MMD, ORCA, structural checks)
+
+[[modules]]
+path = "tmgg.training"
+depends_on = [
+    "tmgg.training.lightning_modules",
+    "tmgg.training.orchestration",
+    "tmgg.data",
+    "tmgg.diffusion",
+]
+# Top-level: re-exports + cross-cutting files (logging.py, exceptions.py).
+# tmgg.diffusion: ChainSavingCallback constructs ChainRecorder and dispatches
+# per-sub-process recorders for CompositeNoiseProcess (parity #46 / D-16a).
+
+[[modules]]
+path = "tmgg.training.lightning_modules"
+depends_on = [
+    "tmgg.training",
+    "tmgg.utils.spectral",
+    "tmgg.utils.noising",
+    "tmgg.evaluation",
+    "tmgg.data", "tmgg.models", "tmgg.diffusion",
+]
+# PL modules use top-level logging.py/exceptions.py + spectral + evaluation + framework
+
+[[modules]]
+path = "tmgg.training.orchestration"
+depends_on = [
+    "tmgg.training",
+    "tmgg.data",
+    "tmgg.utils.noising",
+    "tmgg.modal",  # AsyncEvalSpawnCallback wires Modal volume_commit_fn (function-scoped import)
+]
+# Uses top-level logging.py; hydra instantiation uses tmgg.data and noising sanity checks
+
+[[modules]]
+path = "tmgg.diffusion"
+depends_on = ["tmgg.data", "tmgg.models", "tmgg.utils.noising"]
+# Diffusion components (noise processes, samplers, schedules)
+
+# ============================================================
+# RESEARCH MODULES (unchecked for rapid iteration)
+# ============================================================
+
+[[modules]]
+path = "tmgg.models"
+depends_on = ["tmgg.data", "tmgg.utils.spectral"]
+unchecked = true
+# Model architectures - imports GraphData from tmgg.data, compute_laplacian from tmgg.utils.spectral
+
+[[modules]]
+path = "tmgg.experiments"
+depends_on = []
+unchecked = true
+# Experiment runners - change frequently, no boundary enforcement

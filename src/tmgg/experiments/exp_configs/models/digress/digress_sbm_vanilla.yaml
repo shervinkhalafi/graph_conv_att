@@ -1,0 +1,30 @@
+# Full-size DiGress SBM model with eigenvector embeddings
+#
+# Architecture: Matches official DiGress SBM config (8 layers, dx=256, n_head=8)
+# Optimizer: Official DiGress settings (AdamW + amsgrad, LR=0.0002)
+
+defaults:
+  - digress_base
+  - _self_
+
+model:
+  n_layers: 8
+  hidden_dims:
+    dx: 256
+    de: 64
+    dy: 64
+    n_head: 8
+    dim_ffX: 256
+    dim_ffE: 64
+    dim_ffy: 256
+  hidden_mlp_dims:
+    X: 128
+    E: 64
+    y: 128
+
+# Official DiGress optimizer settings
+learning_rate: 0.0002
+weight_decay: 1e-12
+optimizer_type: adamw
+amsgrad: true
+loss_type: "bce_logits"

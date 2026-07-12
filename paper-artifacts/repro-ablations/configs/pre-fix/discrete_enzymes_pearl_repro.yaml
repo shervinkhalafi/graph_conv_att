@@ -1,0 +1,32 @@
+# @package _global_
+# DiGress ENZYMES variant — PEARL positional encoding instead of
+# eigendecomposition.
+#
+# Mirror of ``discrete_sbm_pearl_repro`` for ENZYMES. Replaces the
+# spectral path of ``ExtraFeatures`` (per-step ``torch.linalg.eigh``)
+# with R-PEARL via :class:`PEARLExtraFeatures`. ENZYMES' n_max=126
+# makes eigh cheaper than on PROTEINS (n_max=620), so the wall-clock
+# win is smaller — but the ablation against ``vignac_repro`` is still
+# clean: identical training pipeline minus the spectral feature path.
+
+defaults:
+  - discrete_enzymes_vignac_repro
+  - _self_
+
+experiment_name: discrete_enzymes_pearl_repro
+wandb_project: discrete-enzymes-pearl-repro
+
+# Replace ``ExtraFeatures(extra_features_type=all)`` with the PEARL
+# equivalent. Same hyperparameters as the SBM variant — PEARL is mostly
+# graph-size-agnostic via random feature initialisation.
+model:
+  model:
+    extra_features:
+      _target_: tmgg.models.digress.pearl_extra_features.PEARLExtraFeatures
+      max_n_nodes: ${data.num_nodes_max_static}
+      pearl_output_dim: 16
+      pearl_num_layers: 3
+      pearl_mode: random
+      pearl_hidden_dim: 64
+      pearl_input_samples: 32
+      pearl_max_nodes: ${data.num_nodes_max_static}

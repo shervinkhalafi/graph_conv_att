@@ -1,0 +1,3 @@
+# Modal
+
+::: tmgg.modal

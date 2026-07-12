@@ -1,0 +1,38 @@
+# @package _global_
+# Shared grid search data configuration
+#
+# Noise-type-specific configs (grid_digress, grid_gaussian, grid_rotation)
+# inherit from this and override only noise_type.
+
+defaults:
+  - base_dataloader
+  - _self_
+
+data:
+  graph_type: sbm
+  graph_config:
+    # Graph parameters
+    num_nodes: 20
+    p_intra: 0.7  # Probability of intra-block edges
+    p_inter: 0.05  # Probability of inter-block edges
+
+    # Block configuration
+    block_sizes: [5, 5, 5, 5]
+
+    # Dataset splits
+    num_train_partitions: 10
+    num_test_partitions: 10
+
+  # DataModule parameters
+  samples_per_graph: 2000
+
+  # Train/val split ratios (remainder goes to test)
+  train_ratio: 0.7
+  val_ratio: 0.15
+
+  # DataLoader parameters
+  batch_size: 32
+  num_workers: 4
+  pin_memory: true
+
+noise_levels: [0.05, 0.1, 0.2, 0.3, 0.4]  # Grid search levels

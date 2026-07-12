@@ -1,0 +1,21 @@
+# Spectral architecture denoising experiments
+#
+# Run with: uv run tmgg-spectral-arch
+# Override: uv run tmgg-spectral-arch model.k=16
+
+defaults:
+  - base_config_denoising
+  - models/spectral/linear_pe@model
+  - _self_
+
+experiment_name: "spectral_arch_denoising"
+wandb_project: architecture-study
+_cli_cmd: tmgg-spectral-arch
+
+# Preserve prior cosine-warmup behaviour after _base_infra default flipped
+# to ``type: none`` (parity #38 / D-9). Spectral denoising experiments
+# use warmup unless explicitly disabled per-run.
+scheduler_config:
+  type: cosine_warmup
+  warmup_fraction: 0.02
+  decay_fraction: 0.8

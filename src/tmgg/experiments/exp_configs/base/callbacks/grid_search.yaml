@@ -1,0 +1,17 @@
+# @package _global_
+# Grid-search callbacks are step-based and use short patience.
+
+callbacks:
+  early_stopping:
+    monitor: val/loss
+    mode: min
+    patience: 4
+    min_delta: 1e-4
+  checkpoint:
+    monitor: val/loss
+    mode: min
+    save_top_k: 3
+    save_last: true
+    filename: "${experiment_name}-step={step:06d}-val_loss={val/loss:.4f}"
+    auto_insert_metric_name: false
+    every_n_train_steps: null

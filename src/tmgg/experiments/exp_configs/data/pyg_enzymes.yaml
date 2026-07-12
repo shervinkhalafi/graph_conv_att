@@ -1,0 +1,33 @@
+# @package data
+# ENZYMES benchmark dataset from PyTorch Geometric (TUDataset)
+# Protein tertiary structures - adjacency only (node features ignored)
+
+_target_: tmgg.data.GraphDataModule
+
+graph_type: enzymes
+
+graph_config:
+  # Informational only for PyG datasets — the actual node count is determined
+  # per graph by the loaded dataset. Required by GraphDataModule.__init__
+  # since the silent ``num_nodes=50`` fallback was removed (CLAUDE.md "no
+  # silent fallbacks"). 126 is the published ENZYMES max.
+  num_nodes: 126
+  # Root directory for PyG datasets (default: ~/.pyg_data)
+  root: null
+  # Maximum graphs to load (null = all)
+  max_graphs: null
+  seed: 42
+
+# Samples per graph (permutations)
+samples_per_graph: 100
+
+# Batch size
+batch_size: 16
+
+# Data loading
+num_workers: 4
+pin_memory: true
+
+# Train/val split ratios (remainder goes to test)
+train_ratio: 0.7
+val_ratio: 0.1

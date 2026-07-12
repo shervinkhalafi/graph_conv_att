@@ -1,0 +1,29 @@
+# @package _global_
+# Denoising task: loss function, noise parameters, data config, model-data sync.
+#
+# Loaded as a config group by all denoising experiment configs.
+# Generative experiments skip this entirely and define their own data/model sections.
+
+defaults:
+  - /data: sbm_default
+
+# Loss function (models output logits, bce_logits applies sigmoid internally)
+loss_type: bce_logits
+
+# Noise configuration
+noise_type: digress
+# TODO(igork, 2026-05-06): paper sec_experiments.tex L105 currently states ε ranges 0.05--0.5 but this list is [0.01, 0.05, 0.1, 0.2, 0.3]. Reconcile before submission --- pick the canonical grid and update either the prose or this list. Do not change values silently; align with the figures/table source first.
+noise_levels: [0.01, 0.05, 0.1, 0.2, 0.3]
+eval_noise_levels: null  # Noise levels for evaluation. null = use noise_levels
+fixed_noise_seed: null  # Set to int for constant noise (sanity check mode)
+
+# Model sync (merged into whichever model config is loaded).
+# Denoising models read noise_type/levels from the top-level task config.
+model:
+  noise_type: ${noise_type}
+  noise_levels: ${noise_levels}
+  seed: ${seed}
+  spectral_k: ${spectral_k}
+  evaluator:
+    _target_: tmgg.evaluation.graph_evaluator.GraphEvaluator
+    eval_num_samples: 128

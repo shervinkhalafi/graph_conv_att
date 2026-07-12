@@ -1,0 +1,10 @@
+{
+    "experiment_name": "my_experiment",
+    "experiment_slug": "{{ cookiecutter.experiment_name | lower | replace(' ', '_') | replace('-', '_') }}",
+    "experiment_type": "denoising",
+    "base_config_parent": "base_config_denoising",
+    "model_family": "spectral",
+    "model_name": "linear_pe",
+    "cli_name": "tmgg-{{ cookiecutter.experiment_slug | replace('_', '-') }}",
+    "wandb_project": "tmgg-{{ cookiecutter.experiment_slug | replace('_', '-') }}"
+}

@@ -1,0 +1,27 @@
+# @package _global_
+# DiGress SBM — PEARL extra features + spectral attention, post-fix exact.
+# ========================================================================
+#
+# Stacks the spectral-attention swap on top of
+# ``discrete_sbm_pearl_repro_exact`` (which already carries the four
+# upstream-parity deltas: ``dim_ffy=2048``, ``amsgrad=false``,
+# ``seed=0``, ``use_upstream_hidden_edge_diagonal=true``). Counterpart
+# to ``discrete_sbm_pearl_spectral_repro`` for re-running the panel
+# after the hidden-edge-diagonal fix (commit f4f9665a).
+
+defaults:
+  - discrete_sbm_pearl_repro_exact
+  - _self_
+
+experiment_name: discrete_sbm_pearl_spectral_repro_exact
+wandb_project: discrete-sbm-pearl-spectral-repro-exact
+
+model:
+  model:
+    projection_config:
+      use_spectral_q: true
+      use_spectral_k: true
+      use_spectral_v: true
+      spectral_k: 16
+      spectral_num_terms: 3
+      spectral_normalize_eigenvalues: true
